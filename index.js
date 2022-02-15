@@ -1,40 +1,26 @@
-const express = require('express');
-// const router = express.Router();
-const app = express();
-// Add swagger
+
+
+
+
+
+
+
+
+
+const express = require("express");
+const controllers = require("./api");
+const config = require("./config/config");
+//Add swagger
 const swaggerUi = require('swagger-ui-express');
-// const swaggerDocument = require('./swagger.json');
+const swaggerDocument = require('./swagger.json');
 const swaggerJSDoc = require('swagger-jsdoc');
 
+async function startServer() {
+  const app = express();
 
-app.get('/', (req, res) => {
-    res.send('Hello World');
-});
+  await require("./loaders")(app);
 
-app.post('/', (req, res) => {
-    res.render('index', {
-        title: 'Home',
-        message: 'Welcome to the POST home page'
-    });
-});
-
-// returns the rating of an input movie from IMDB
-app.get('/m', (req, res) => {
-    req = req.query;
-    var movie = req.movie;
-    var url = 'http://www.omdbapi.com/?t=' + movie + '&apikey=thewdb';
-    var request = require('request');
-    request(url, function (error, response, body) {
-        if (!error && response.statusCode == 200) {
-            var json = JSON.parse(body);
-            var rating = json.imdbRating;
-            res.send(rating);
-        }
-    });
-});
-
-// app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
-
+  
 const swaggerDefinition = {
   openapi: '3.0.0',
   info: {
@@ -50,11 +36,20 @@ const options = {
 };
 
 const swaggerSpec = swaggerJSDoc(options);
-
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-// app.use('/', router);
+  app.listen(config.port, (err) => {
+    if (err) {
+      Logger.error(err);
+      process.exit(1);
+      return;
+    }
+    console.log(`
+        ################################################
+        🛡️  Server listening on port: ${config.port} 🛡️ 
+        ################################################
+      `);
+  });
+}
 
-app.listen(3000, () => {
-    console.log('Server is running on port 3000');
-});
+startServer();
