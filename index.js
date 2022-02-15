@@ -7,7 +7,7 @@ const swaggerDocument = require('./swagger.json');
 
 
 app.get('/', (req, res) => {
-    res.send('Hello World!');
+    res.send('Hello World');
 });
 
 app.post('/', (req, res) => {
