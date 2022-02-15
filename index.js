@@ -3,7 +3,8 @@ const express = require('express');
 const app = express();
 // Add swagger
 const swaggerUi = require('swagger-ui-express');
-const swaggerDocument = require('./swagger.json');
+// const swaggerDocument = require('./swagger.json');
+const swaggerJSDoc = require('swagger-jsdoc');
 
 
 app.get('/', (req, res) => {
@@ -32,7 +33,25 @@ app.get('/m', (req, res) => {
     });
 });
 
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+// app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
+const swaggerDefinition = {
+  openapi: '3.0.0',
+  info: {
+    title: 'Movie API',
+    version: '1.0.0',
+  },
+};
+
+const options = {
+  swaggerDefinition,
+  // Paths to files containing OpenAPI definitions
+  apis: ['./routes/*.js'],
+};
+
+const swaggerSpec = swaggerJSDoc(options);
+
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // app.use('/', router);
 
