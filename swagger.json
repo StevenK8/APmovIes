@@ -1,19 +1,18 @@
 {
     "swagger": "2.0",
     "info": {
-      "version": "1.0.0",
+      "version": "3.0.3",
       "title": "Movie API",
       "description": "API to get movie ratings"
     },
     "host": "localhost:3000",
     "basePath": "/",
-    "tags": [
-      {
-        "name": "Users",
-        "description": "API for users in the system"
-      }
-    ],
     "schemes": ["http"],
     "consumes": ["application/json"],
-    "produces": ["application/json"]
+    "produces": ["application/json"],
+    "servers": [
+      {
+        "url": "http://localhost:3000/api/v1"
+      }
+    ]
   }
