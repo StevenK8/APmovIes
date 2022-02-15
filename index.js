@@ -14,6 +14,7 @@ const config = require("./config/config");
 const swaggerUi = require('swagger-ui-express');
 const swaggerDocument = require('./swagger.json');
 const swaggerJSDoc = require('swagger-jsdoc');
+const getMovieDocs = require('./docs/getMovie.js') 
 
 async function startServer() {
   const app = express();
@@ -27,6 +28,11 @@ const swaggerDefinition = {
     title: 'Movie API',
     version: '1.0.0',
   },
+  paths: {
+    '/movie': {
+      getMovieDocs
+    }
+  }
 };
 
 const options = {
