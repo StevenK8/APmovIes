@@ -1,4 +1,4 @@
-module.export = {
+module.exports = {
     get: {
         tags: ["IMDB Movie"],
         description: "Get a movie rating",

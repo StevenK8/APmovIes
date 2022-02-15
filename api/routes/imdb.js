@@ -1,6 +1,6 @@
 /**
  * @swagger
- * /imdb:
+ * /:
  *   get:
  *     summary: Retrieve a rating from an IMDB movie
  *     description: Retrieve a rating from an IMDB movie
