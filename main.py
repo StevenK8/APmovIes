@@ -29,7 +29,7 @@ app = FastAPI()
 
 @app.get("/")
 async def root():
-    return {"message": "Welcome to APmovIes ! An API that gives informations from multiple movie websites. Try .../docs to access our documentation"}
+    return {"message": "Welcome to APmovIes ! An API that gives informations from multiple movie websites. Try /docs to access our documentation"}
 
 
 # gets the rating of a movie from imdb
@@ -67,7 +67,7 @@ async def get_movie_rating(movie_name: str):
 @app.get("/movie/{movie_name}")
 async def get_movie_rating(movie_name: str):
     urlOmdb = "http://www.omdbapi.com/?t=" + movie_name + "&apikey=thewdb"
-    urlTmdb = "https://api.themoviedb.org/3/search/movie?api_key=aa643d7ba8d154d4da222aaf9dc63aba&query=" + movie_name
+    urlTmdb = "https://api.themoviedb.org/3/search/movie?api_key="+TMDB_API_KEY+"&query=" + movie_name
 
 
     request_responseOmdb = request.urlopen(urlOmdb)
