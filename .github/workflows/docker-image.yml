@@ -11,10 +11,6 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
-    container:
-        credentials:
-           username: StevenK8
-           password: ${{  secrets.DOCKER_CONTAINER_REGISTRY_TOKEN }}
 
     steps:
     - uses: actions/checkout@v2
