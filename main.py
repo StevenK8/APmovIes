@@ -1,8 +1,19 @@
 from urllib import request
 import json 
 from fastapi import FastAPI
+import pymysql
 # from bs4 import BeautifulSoup
 # import requests
+
+import configparser
+CONFIG_PATH = './mysql_config.ini'  
+CONFIG = configparser.RawConfigParser()
+CONFIG.read(CONFIG_PATH)
+
+MYSQL_HOST = CONFIG.get('mysql', 'host')
+MYSQL_USER = CONFIG.get('mysql', 'user')
+MYSQL_PASSWORD = CONFIG.get('mysql', 'password')
+MYSQL_DB = CONFIG.get('mysql', 'db')
 
 app = FastAPI()
 
@@ -58,6 +69,10 @@ async def get_movie_rating(movie_name: str):
     movie = dataTmdb["results"][0]
 
     return {"original_title": dataOmdb["Title"], "rating": (float(dataOmdb["imdbRating"]) + movie["vote_average"] + ( float(dataOmdb["Metascore"])/10)) / 3, "vote_count": int(dataOmdb["imdbVotes"].replace(",", "")) + movie["vote_count"] }
+
+
+def connect_db():
+    return pymysql.connect(host=MYSQL_HOST,user=MYSQL_USER, passwd=MYSQL_PASSWORD, db=MYSQL_DB)
 
 # gets the rating of a movie by scrapping the allocine website
 # @app.get("/movie/allocine/{movie_name}")
