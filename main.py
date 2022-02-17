@@ -90,8 +90,14 @@ async def post_comment(movie_name : str, comment : Comment):
 
 @app.get("/movie/{movie_name}/comments")
 async def get_comments(movie_name: str):
-    #todo --> appel à la bd
-    return 
+    db = connect_db()
+    cur = db.cursor()
+    cur.execute("SELECT text, rating FROM comments c, movies m WHERE c.idm = m.id and m.title=%s", (movie_name))
+    comments = cur.fetchall() 
+    cur.close()
+    del cur
+    db.close()
+    return comments
 
 @app.post("/{name}")
 async def create_user(user: User):
