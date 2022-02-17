@@ -23,7 +23,7 @@ async def get_movie_rating(movie_name: str):
 # get the rating of a movie from the movie database
 @app.get("/movie/tmdb/{movie_name}")
 async def get_movie_rating(movie_name: str):
-    url = "https://api.themoviedb.org/3/search/movie?api_key=d8f8f0d8f8f0d8f8f0d8f8f0d8f8f0d&query=" + movie_name
+    url = "https://api.themoviedb.org/3/search/movie?api_key=aa643d7ba8d154d4da222aaf9dc63aba&query=" + movie_name
     # Get json data from the url
     request_response = request.urlopen(url)
     data = json.loads(request_response.read())
