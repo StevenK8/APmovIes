@@ -1,0 +1,23 @@
+  fastapi:
+      container_name: fastapi
+      ports:
+        - '6000:80'
+      image: tiangolo/uvicorn-gunicorn-fastapi:python3.7
+      volumes:
+        - './app:/app'
+      networks:
+        - web
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.fastapi-web.entrypoints=web"
+        - "traefik.http.routers.fastapi-web.middlewares=redirect@file"
+        - "traefik.http.routers.fastapi-secured.entrypoints=web-secured"
+        - "traefik.http.routers.fastapi-secured.tls.certresolver=mytlschallenge"
+        - "traefik.http.routers.fastapi-web.rule=Host(`fastapi.stevenkerautret.eu`)"
+        - "traefik.http.routers.fastapi-secured.rule=Host(`fastapi.stevenkerautret.eu`)"
+  
+  networks:
+    web:
+      external: true
+    backend:
+      external: false
