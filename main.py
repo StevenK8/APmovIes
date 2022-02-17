@@ -75,13 +75,13 @@ async def get_comments(movie_name: str):
     #todo --> appel à la bd
     return 
 
-@app.post("/{id_user}")
+@app.post("/{name}")
 async def create_user(user: User):
     #todo --> call db
     return user;
 
-@app.delete("/{id_user}")
-async def delete_user(id_user: int):
+@app.delete("/{name}")
+async def delete_user(name: str):
     #todo --> call db
     return 
 
