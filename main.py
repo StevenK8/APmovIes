@@ -1,10 +1,11 @@
+from cmath import log
 from urllib import request
 import json 
 import pymysql
 # from bs4 import BeautifulSoup
 # import requests
-from fastapi import FastAPI, Path
-from pydantic import BaseModel
+from fastapi import FastAPI, Path, HTTPException
+from pydantic import BaseModel, JsonError
 
 class Comment(BaseModel):
     comment: str = ""
@@ -12,6 +13,7 @@ class Comment(BaseModel):
 
 class User(BaseModel):
     name: str = ""
+    apikey: str = ""
 
 import configparser
 CONFIG_PATH = './config.ini'  
@@ -83,9 +85,25 @@ async def get_movie_rating(movie_name: str):
 def connect_db():
     return pymysql.connect(host=MYSQL_HOST,user=MYSQL_USER, passwd=MYSQL_PASSWORD, db=MYSQL_DB)
 
-@app.post("/movie/{movie_name}/")
-async def post_comment(movie_name : str, comment : Comment):
-    #todo --> put bd
+@app.post("/movie")
+async def post_comment(apikey: str, idm : str, comment : Comment):
+    try:
+        db = connect_db()
+        cur = db.cursor()
+        cur.execute("SELECT id from users where apikey=%s", (apikey))
+        idu = cur.fetchall();
+        if cur.rowcount == 0:
+            return {
+            "error" : "wrong apikey !"
+            }
+        else:
+            cur.execute("INSERT INTO comments(idu, idm, rating, text) VALUES (%s,%s,%s,%s)", (idu, idm, comment.rate, comment.comment))
+            comment = db.commit()
+            cur.close()
+            del cur
+            db.close()
+    except HTTPException as e:
+        log.debug(e)
     return comment 
 
 @app.get("/movie/{movie_name}/comments")
@@ -94,14 +112,25 @@ async def get_comments(movie_name: str):
     cur = db.cursor()
     cur.execute("SELECT text, rating FROM comments c, movies m WHERE c.idm = m.id and m.title=%s", (movie_name))
     comments = cur.fetchall() 
+    if cur.rowcount == 0:
+        return {
+        "error" : "wrong movie name !"
+        }
     cur.close()
     del cur
     db.close()
     return comments
 
-@app.post("/{name}")
+@app.post("/")
 async def create_user(user: User):
-    #todo --> call db
+    try:
+        db = connect_db()
+        cur = db.cursor()
+        cur.execute("INSERT INTO users(name, apikey) VALUES (%s,%s)", (user.name, user.apikey))
+        user = db.commit()
+        db.close()
+    except HTTPException as e:
+        log.debug(e)
     return user;
 
 @app.delete("/{name}")
