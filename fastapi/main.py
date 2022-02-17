@@ -18,7 +18,7 @@ async def get_movie_rating(movie_name: str):
     request_response = request.urlopen(url)
     data = json.loads(request_response.read())
     # get imdbRating from the response
-    return {"rating": data["imdbRating"]}
+    return {"original_title" : data["Title"],"rating": float(data["imdbRating"]), "vote_count": int(data["imdbVotes"].replace(",", ""))}
     
 # get the rating of a movie from the movie database
 @app.get("/movie/tmdb/{movie_name}")
@@ -30,4 +30,14 @@ async def get_movie_rating(movie_name: str):
     # get the first movie from the response
     movie = data["results"][0]
     # get the rating from the movie
-    return {"rating": movie["vote_average"]}
+    return {"original_title" : movie["original_title"], "rating": movie["vote_average"], "vote_count": movie["vote_count"]}
+
+# gets the rating of a movie from metacritic
+@app.get("/movie/metacritic/{movie_name}")
+async def get_movie_rating(movie_name: str):
+    url = "http://www.omdbapi.com/?t=" + movie_name + "&apikey=thewdb"
+    # Get json data from the url
+    request_response = request.urlopen(url)
+    data = json.loads(request_response.read())
+    # get imdbRating from the response
+    return {"original_title" : data["Title"],"rating": float(data["Metascore"])/10}
