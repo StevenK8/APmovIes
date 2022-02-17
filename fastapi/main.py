@@ -43,12 +43,28 @@ async def get_movie_rating(movie_name: str):
     # get imdbRating from the response
     return {"original_title" : data["Title"],"rating": float(data["Metascore"])/10}
 
+@app.get("/movie/{movie_name}")
+async def get_movie_rating(movie_name: str):
+    urlOmdb = "http://www.omdbapi.com/?t=" + movie_name + "&apikey=thewdb"
+    urlTmdb = "https://api.themoviedb.org/3/search/movie?api_key=aa643d7ba8d154d4da222aaf9dc63aba&query=" + movie_name
+
+
+    request_responseOmdb = request.urlopen(urlOmdb)
+    dataOmdb = json.loads(request_responseOmdb.read())
+    request_responseTmdb = request.urlopen(urlTmdb)
+    dataTmdb = json.loads(request_responseTmdb.read())
+
+    movie = dataTmdb["results"][0]
+
+    return {"original_title": dataOmdb["Title"], "rating": (float(dataOmdb["imdbRating"]) + movie["vote_average"] + ( float(dataOmdb["Metascore"])/10)) / 3, "vote_count": int(dataOmdb["imdbVotes"].replace(",", "")) + movie["vote_count"] }
+
 # gets the rating of a movie by scrapping the allocine website
 @app.get("/movie/allocine/{movie_name}")
 async def get_movie_rating(movie_name: str):
     url = "https://www.allocine.fr/rechercher/?q=" + movie_name
     soup = BeautifulSoup(request.urlopen(url), "html.parser")
-    print(soup.find("a", {"class": "xXx meta-title-link"}))
+    print(soup.find("span", {"class": "xXx meta-title-link"}))
+
     # num_fiche_film = BeautifulSoup(request.urlopen(url).read(), "html.parser").find("a", {"class": "meta-title-link"})["href"].split("/")[-1]
     # url = "https://www.allocine.fr/film/https://www.allocine.fr/film/fichefilm-"+num_fiche_film+"/critiques/spectateurs/"
     # soup = BeautifulSoup(request.urlopen(url).read(), "html.parser")
