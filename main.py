@@ -33,7 +33,7 @@ async def root():
 
 # gets the rating of a movie from imdb
 @app.get("/movie/imdb/{movie_name}")
-async def get_movie_rating(movie_name: str):
+async def get_movie_rating_imdb(movie_name: str):
     url = "http://www.omdbapi.com/?t=" + movie_name + "&apikey=thewdb"
     # Get json data from the url
     request_response = request.urlopen(url)
@@ -43,7 +43,7 @@ async def get_movie_rating(movie_name: str):
     
 # get the rating of a movie from the movie database
 @app.get("/movie/tmdb/{movie_name}")
-async def get_movie_rating(movie_name: str):
+async def get_movie_rating_tmdb(movie_name: str):
     url = "https://api.themoviedb.org/3/search/movie?api_key="+TMDB_API_KEY+"&query=" + movie_name
     # Get json data from the url
     request_response = request.urlopen(url)
@@ -55,7 +55,7 @@ async def get_movie_rating(movie_name: str):
 
 # gets the rating of a movie from metacritic
 @app.get("/movie/metacritic/{movie_name}")
-async def get_movie_rating(movie_name: str):
+async def get_movie_rating_metacritic(movie_name: str):
     url = "http://www.omdbapi.com/?t=" + movie_name + "&apikey=thewdb"
     # Get json data from the url
     request_response = request.urlopen(url)
@@ -63,20 +63,31 @@ async def get_movie_rating(movie_name: str):
     # get imdbRating from the response
     return {"original_title" : data["Title"],"rating": float(data["Metascore"])/10}
 
+# @app.get("/movie/{movie_name}")
+# async def get_movie_rating(movie_name: str):
+#     urlOmdb = "http://www.omdbapi.com/?t=" + movie_name + "&apikey=thewdb"
+#     urlTmdb = "https://api.themoviedb.org/3/search/movie?api_key="+TMDB_API_KEY+"&query=" + movie_name
+
+
+#     request_responseOmdb = request.urlopen(urlOmdb)
+#     dataOmdb = json.loads(request_responseOmdb.read())
+#     request_responseTmdb = request.urlopen(urlTmdb)
+#     dataTmdb = json.loads(request_responseTmdb.read())
+
+#     movie = dataTmdb["results"][0]
+
+#     return {"original_title": dataOmdb["Title"], "rating": (float(dataOmdb["imdbRating"]) + movie["vote_average"] + ( float(dataOmdb["Metascore"])/10)) / 3, "vote_count": int(dataOmdb["imdbVotes"].replace(",", "")) + movie["vote_count"] }
+
 @app.get("/movie/{movie_name}")
-async def get_movie_rating(movie_name: str):
-    urlOmdb = "http://www.omdbapi.com/?t=" + movie_name + "&apikey=thewdb"
-    urlTmdb = "https://api.themoviedb.org/3/search/movie?api_key="+TMDB_API_KEY+"&query=" + movie_name
+async def get_movie_rating_api(movie_name: str):
+    imdb = await get_movie_rating_imdb(movie_name)
+    tmdb = await get_movie_rating_tmdb(movie_name)
+    metacritic = await get_movie_rating_metacritic(movie_name)
+    
+    return {"original_title": imdb["original_title"], "rating": (float(imdb["rating"]) + tmdb["rating"] + float(metacritic["rating"])) / 3, "vote_count": int(imdb["vote_count"]) + tmdb["vote_count"]}
 
+    # return {"original_title": dataOmdb["Title"], "rating": (float(dataOmdb["imdbRating"]) + movie["vote_average"] + ( float(dataOmdb["Metascore"])/10)) / 3, "vote_count": int(dataOmdb["imdbVotes"].replace(",", "")) + movie["vote_count"] }
 
-    request_responseOmdb = request.urlopen(urlOmdb)
-    dataOmdb = json.loads(request_responseOmdb.read())
-    request_responseTmdb = request.urlopen(urlTmdb)
-    dataTmdb = json.loads(request_responseTmdb.read())
-
-    movie = dataTmdb["results"][0]
-
-    return {"original_title": dataOmdb["Title"], "rating": (float(dataOmdb["imdbRating"]) + movie["vote_average"] + ( float(dataOmdb["Metascore"])/10)) / 3, "vote_count": int(dataOmdb["imdbVotes"].replace(",", "")) + movie["vote_count"] }
 
 
 def connect_db():
