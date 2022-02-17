@@ -2,6 +2,7 @@ from urllib import request
 import json 
 from fastapi import FastAPI
 from bs4 import BeautifulSoup
+# import requests
 
 app = FastAPI()
 
@@ -62,9 +63,9 @@ async def get_movie_rating(movie_name: str):
 @app.get("/movie/allocine/{movie_name}")
 async def get_movie_rating(movie_name: str):
     url = "https://www.allocine.fr/rechercher/?q=" + movie_name
-    soup = BeautifulSoup(request.urlopen(url), "html.parser")
-    print(soup.find("span", {"class": "xXx meta-title-link"}))
-
+    page = requests.get(url)
+    soup = BeautifulSoup(page.content, "html.parser")
+    print(soup.find("h2").findChildren())
     # num_fiche_film = BeautifulSoup(request.urlopen(url).read(), "html.parser").find("a", {"class": "meta-title-link"})["href"].split("/")[-1]
     # url = "https://www.allocine.fr/film/https://www.allocine.fr/film/fichefilm-"+num_fiche_film+"/critiques/spectateurs/"
     # soup = BeautifulSoup(request.urlopen(url).read(), "html.parser")
