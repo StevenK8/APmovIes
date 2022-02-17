@@ -88,7 +88,7 @@ async def post_comment(movie_name : str, comment : Comment):
     #todo --> put bd
     return comment 
 
-@app.get("movie/{movie_name}/comments")
+@app.get("/movie/{movie_name}/comments")
 async def get_comments(movie_name: str):
     #todo --> appel à la bd
     return 
@@ -102,6 +102,17 @@ async def create_user(user: User):
 async def delete_user(name: str):
     #todo --> call db
     return 
+
+# @app.get("/mycomments/{name}")
+# def get_albums(name: str):
+#     db = connect_db()
+#     cur = db.cursor()
+#     cur.execute("SELECT ")
+#     mesures = cur.fetchall() 
+#     cur.close()
+#     del cur
+#     db.close()
+#     return mesures
 
 
 # gets the rating of a movie by scrapping the allocine website
