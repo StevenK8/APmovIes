@@ -11,9 +11,6 @@ class Comment(BaseModel):
     comment: str = ""
     rate: int = Path(..., title = "rate", gt=0, le=10)
 
-class User(BaseModel):
-    name: str = ""
-    apikey: str = ""
 
 import configparser
 CONFIG_PATH = './config.ini'  
@@ -122,11 +119,11 @@ async def get_comments(movie_name: str):
     return comments
 
 @app.post("/")
-async def create_user(user: User):
+async def create_user(name: str, apikey: str):
     try:
         db = connect_db()
         cur = db.cursor()
-        cur.execute("INSERT INTO users(name, apikey) VALUES (%s,%s)", (user.name, user.apikey))
+        cur.execute("INSERT INTO users(name, apikey) VALUES (%s,%s)", (name, apikey))
         user = db.commit()
         db.close()
     except HTTPException as e:
@@ -135,19 +132,35 @@ async def create_user(user: User):
 
 @app.delete("/{name}")
 async def delete_user(name: str):
-    #todo --> call db
-    return 
+    try:
+        db = connect_db()
+        cur = db.cursor()
+        cur.execute("DELETE FROM users WHERE name=%s", (name))
+        user = db.commit()
+        db.close()
+    except HTTPException as e:
+        log.debug(e)
+    return user;
+     
 
-# @app.get("/mycomments/{name}")
-# def get_albums(name: str):
-#     db = connect_db()
-#     cur = db.cursor()
-#     cur.execute("SELECT ")
-#     mesures = cur.fetchall() 
-#     cur.close()
-#     del cur
-#     db.close()
-#     return mesures
+@app.get("/mycomments/{name}")
+def get_mycomments(apikey: str):
+    db = connect_db()
+    cur = db.cursor()
+
+    cur.execute("SELECT id from users where apikey=%s", (apikey))
+    idu = cur.fetchall();
+    if cur.rowcount == 0:
+        return {
+        "error" : "wrong apikey !"
+        }
+    else:
+        cur.execute("SELECT rating, text FROM comments WHERE idu=%s", (idu))
+        mycomments = cur.fetchall() 
+        cur.close()
+        del cur
+        db.close()
+        return mycomments
 
 
 # gets the rating of a movie by scrapping the allocine website
