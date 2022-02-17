@@ -7,12 +7,15 @@ class Comment(BaseModel):
     comment: str = ""
     rate: int = Path(..., title = "rate", gt=0, le=10)
 
+class User(BaseModel):
+    name: str = ""
+
 app = FastAPI()
 
 
 @app.get("/")
 async def root():
-    return {"message": "Hello World"}
+    return {"message": "Welcome to APmovIes ! An API that gives informations from multiple movie websites. Try .../docs to access our documentation"}
 
 
 # gets the rating of a movie from imdb
@@ -67,10 +70,21 @@ async def post_comment(movie_name : str, comment : Comment):
     #todo --> put bd
     return comment 
 
-app.get("movie/{movie_name}/comments")
+@app.get("movie/{movie_name}/comments")
 async def get_comments(movie_name: str):
     #todo --> appel à la bd
     return 
+
+@app.post("/{id_user}")
+async def create_user(user: User):
+    #todo --> call db
+    return user;
+
+@app.delete("/{id_user}")
+async def delete_user(id_user: int):
+    #todo --> call db
+    return 
+
 
 # gets the rating of a movie by scrapping the allocine website
 # @app.get("/movie/allocine/{movie_name}")
