@@ -1,9 +1,17 @@
 from urllib import request
 import json 
-from fastapi import FastAPI
 import pymysql
 # from bs4 import BeautifulSoup
 # import requests
+from fastapi import FastAPI, Path
+from pydantic import BaseModel
+
+class Comment(BaseModel):
+    comment: str = ""
+    rate: int = Path(..., title = "rate", gt=0, le=10)
+
+class User(BaseModel):
+    name: str = ""
 
 import configparser
 CONFIG_PATH = './config.ini'  
@@ -21,7 +29,7 @@ app = FastAPI()
 
 @app.get("/")
 async def root():
-    return {"message": "Hello World"}
+    return {"message": "Welcome to APmovIes ! An API that gives informations from multiple movie websites. Try .../docs to access our documentation"}
 
 
 # gets the rating of a movie from imdb
@@ -74,6 +82,27 @@ async def get_movie_rating(movie_name: str):
 
 def connect_db():
     return pymysql.connect(host=MYSQL_HOST,user=MYSQL_USER, passwd=MYSQL_PASSWORD, db=MYSQL_DB)
+
+@app.post("/movie/{movie_name}/")
+async def post_comment(movie_name : str, comment : Comment):
+    #todo --> put bd
+    return comment 
+
+@app.get("movie/{movie_name}/comments")
+async def get_comments(movie_name: str):
+    #todo --> appel à la bd
+    return 
+
+@app.post("/{name}")
+async def create_user(user: User):
+    #todo --> call db
+    return user;
+
+@app.delete("/{name}")
+async def delete_user(name: str):
+    #todo --> call db
+    return 
+
 
 # gets the rating of a movie by scrapping the allocine website
 # @app.get("/movie/allocine/{movie_name}")
