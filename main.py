@@ -1,6 +1,11 @@
 from urllib import request
 import json 
 from fastapi import FastAPI
+from pydantic import BaseModel
+
+class Comment(BaseModel):
+    comment: str = ""
+    rate: int = 5
 
 app = FastAPI()
 
@@ -58,9 +63,9 @@ async def get_movie_rating(movie_name: str):
     return {"original_title": dataOmdb["Title"], "rating": (float(dataOmdb["imdbRating"]) + movie["vote_average"] + ( float(dataOmdb["Metascore"])/10)) / 3, "vote_count": int(dataOmdb["imdbVotes"].replace(",", "")) + movie["vote_count"] }
 
 @app.post("/movie/{movie_name}/")
-async def post_comment(movie_name : str, comment : str):
+async def post_comment(movie_name : str, comment : Comment):
     #todo
-    return 
+    return comment 
 
 app.get("movie/{movie_name}/comments")
 async def get_comments(movie_name: str):
