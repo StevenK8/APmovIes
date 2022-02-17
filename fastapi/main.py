@@ -1,6 +1,7 @@
 from urllib import request
 import json 
 from fastapi import FastAPI
+from bs4 import BeautifulSoup
 
 app = FastAPI()
 
@@ -41,3 +42,17 @@ async def get_movie_rating(movie_name: str):
     data = json.loads(request_response.read())
     # get imdbRating from the response
     return {"original_title" : data["Title"],"rating": float(data["Metascore"])/10}
+
+# gets the rating of a movie by scrapping the allocine website
+@app.get("/movie/allocine/{movie_name}")
+async def get_movie_rating(movie_name: str):
+    url = "https://www.allocine.fr/rechercher/?q=" + movie_name
+    soup = BeautifulSoup(request.urlopen(url), "html.parser")
+    print(soup.find("a", {"class": "xXx meta-title-link"}))
+    # num_fiche_film = BeautifulSoup(request.urlopen(url).read(), "html.parser").find("a", {"class": "meta-title-link"})["href"].split("/")[-1]
+    # url = "https://www.allocine.fr/film/https://www.allocine.fr/film/fichefilm-"+num_fiche_film+"/critiques/spectateurs/"
+    # soup = BeautifulSoup(request.urlopen(url).read(), "html.parser")
+    # # get the public rating from the website
+    # rating = soup.find("span", {"class": "note"}).text
+    # title = soup.find("h1", {"class": "titlebar-link"}).text
+    # return {"original_title" : title, "rating": float(rating)}
