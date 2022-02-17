@@ -57,10 +57,15 @@ async def get_movie_rating(movie_name: str):
 
     return {"original_title": dataOmdb["Title"], "rating": (float(dataOmdb["imdbRating"]) + movie["vote_average"] + ( float(dataOmdb["Metascore"])/10)) / 3, "vote_count": int(dataOmdb["imdbVotes"].replace(",", "")) + movie["vote_count"] }
 
-@app.post("/movie/{movie_name}/comment")
-async def post_comment(movie_name : str):
+@app.post("/movie/{movie_name}/")
+async def post_comment(movie_name : str, comment : str):
     #todo
-    return
+    return 
+
+app.get("movie/{movie_name}/comments")
+async def get_comments(movie_name: str):
+    #todo --> appel à la bd
+    return 
 
 # gets the rating of a movie by scrapping the allocine website
 # @app.get("/movie/allocine/{movie_name}")
