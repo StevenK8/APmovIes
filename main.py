@@ -1,11 +1,11 @@
 from urllib import request
 import json 
-from fastapi import FastAPI
+from fastapi import FastAPI, Path
 from pydantic import BaseModel
 
 class Comment(BaseModel):
     comment: str = ""
-    rate: int = 5
+    rate: int = Path(..., title = "rate", gt=0, le=10)
 
 app = FastAPI()
 
@@ -64,7 +64,7 @@ async def get_movie_rating(movie_name: str):
 
 @app.post("/movie/{movie_name}/")
 async def post_comment(movie_name : str, comment : Comment):
-    #todo
+    #todo --> put bd
     return comment 
 
 app.get("movie/{movie_name}/comments")
