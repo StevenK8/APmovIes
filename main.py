@@ -107,7 +107,7 @@ def connect_db():
     return pymysql.connect(host=MYSQL_HOST,user=MYSQL_USER, passwd=MYSQL_PASSWORD, db=MYSQL_DB)
 
 @app.post("/movie")
-async def post_comment(apikey: str, idm : str, comment : Comment):
+async def post_comment(apikey: str, title : str, comment : Comment):
     try:
         db = connect_db()
         cur = db.cursor()
@@ -118,11 +118,22 @@ async def post_comment(apikey: str, idm : str, comment : Comment):
             "error" : "wrong apikey !"
             }
         else:
-            cur.execute("INSERT INTO comments(idu, idm, rating, text) VALUES (%s,%s,%s,%s)", (idu, idm, comment.rate, comment.comment))
-            comment = db.commit()
-            cur.close()
-            del cur
-            db.close()
+            cur.execute("SELECT c.id from comments c, users u, movies m where c.idu=u.id AND m.id=c.idm AND apikey=%s AND m.title like %s", (apikey, title))
+            if cur.rowcount >= 1:
+                print("update")
+            else:
+                try:
+                    idm = await get_movie_rating_tmdb(title)["imdbID"]
+                except Exception:
+                    return {
+                        "error" : "movie not found"
+                    }
+                cur.execute("UPDATE comments SET rating = %s, text = %s WHERE comments.idm = %s AND comments.idu = %s;", ( comment.rate, comment.comment, idm, idu))
+                comment = db.commit()
+    
+        cur.close()
+        del cur
+        db.close()
     except HTTPException as e:
         log.debug(e)
     return comment 
