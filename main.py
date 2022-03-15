@@ -243,7 +243,7 @@ def get_mycomments(apikey: str):
             "error": "wrong apikey !"
         }
     else:
-        cur.execute("SELECT rating, text FROM comments WHERE idu=%s", (idu))
+        cur.execute("SELECT m.title, c.rating, c.text FROM comments c, movies m WHERE m.id=c.idm AND idu=%s", (idu))
         mycomments = cur.fetchall()
         cur.close()
         del cur
