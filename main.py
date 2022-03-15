@@ -9,10 +9,6 @@ from pydantic import BaseModel, JsonError, UrlError
 
 from fastapi.security.api_key import APIKeyQuery, APIKeyCookie, APIKeyHeader, APIKey
 
-class Comment(BaseModel):
-    comment: str = ""
-    rate: int = Path(..., title = "rate", gt=0, le=10)
-
 
 import configparser
 CONFIG_PATH = './config.ini'  
@@ -97,7 +93,7 @@ def connect_db():
 
 
 @app.post("/movie")
-async def post_comment(apikey: str, movieName : str, comment : Comment):
+async def post_comment(apikey: str, movieName : str, comment : str, rate : int):
     try:
         db = connect_db()
         cur = db.cursor()
@@ -115,14 +111,14 @@ async def post_comment(apikey: str, movieName : str, comment : Comment):
                     "error" : "this movie doesn't exist or is not in DB"
                 }
             else:
-                cur.execute("INSERT INTO comments(idu, idm, rating, text) VALUES (%s,%s,%s,%s)", (idu, idm, comment.rate, comment.comment))
+                cur.execute("INSERT INTO comments(idu, idm, rating, text) VALUES (%s,%s,%s,%s)", (idu, idm, rate, comment))
                 commit = db.commit()
                 cur.close()
                 del cur
                 db.close()
     except HTTPException as e:
         log.debug(e)
-    return comment
+    return {"comment" : comment, "rate" : rate}
 
 @app.get("/movie/{movie_name}/comments")
 async def get_comments(movie_name: str):
