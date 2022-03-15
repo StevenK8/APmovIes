@@ -1,11 +1,14 @@
 from cmath import log
 from urllib import request
-import json 
+import json
+from urllib.error import HTTPError, URLError 
 import pymysql
 # from bs4 import BeautifulSoup
 # import requests
 from fastapi import FastAPI, Path, HTTPException
-from pydantic import BaseModel, JsonError
+from pydantic import BaseModel, JsonError, UrlError
+
+from fastapi.security.api_key import APIKeyQuery, APIKeyCookie, APIKeyHeader, APIKey
 
 class Comment(BaseModel):
     comment: str = ""
@@ -86,9 +89,6 @@ async def get_movie_rating_api(movie_name: str):
     
     return {"original_title": imdb["original_title"], "rating": (float(imdb["rating"]) + tmdb["rating"] + float(metacritic["rating"])) / 3, "vote_count": int(imdb["vote_count"]) + tmdb["vote_count"]}
 
-    # return {"original_title": dataOmdb["Title"], "rating": (float(dataOmdb["imdbRating"]) + movie["vote_average"] + ( float(dataOmdb["Metascore"])/10)) / 3, "vote_count": int(dataOmdb["imdbVotes"].replace(",", "")) + movie["vote_count"] }
-
-
 
 def connect_db():
     return pymysql.connect(host=MYSQL_HOST,user=MYSQL_USER, passwd=MYSQL_PASSWORD, db=MYSQL_DB)
@@ -130,23 +130,27 @@ async def get_comments(movie_name: str):
     return comments
 
 @app.post("/")
-async def create_user(name: str, apikey: str):
+async def create_user(name: str):
     try:
         db = connect_db()
         cur = db.cursor()
-        cur.execute("INSERT INTO users(name, apikey) VALUES (%s,%s)", (name, apikey))
+        cur.execute("INSERT INTO users(name) VALUES (%s)", (name))
         user = db.commit()
+
+        cur.execute("SELECT apikey from users where name=%s", (name))
+        apiKeyUser = cur.fetchall()
+
         db.close()
     except HTTPException as e:
         log.debug(e)
-    return user;
+    return "Your apikey : " , apiKeyUser, " keep it confidential"
 
-@app.delete("/{name}")
-async def delete_user(name: str):
+@app.delete("/")
+async def delete_user(apikey: str):
     try:
         db = connect_db()
         cur = db.cursor()
-        cur.execute("DELETE FROM users WHERE name=%s", (name))
+        cur.execute("DELETE FROM users WHERE apikey=%s", (apikey))
         user = db.commit()
         db.close()
     except HTTPException as e:
@@ -173,6 +177,8 @@ def get_mycomments(apikey: str):
         db.close()
         return mycomments
 
+#@app.put("/mycomments/{name}")
+
 
 # gets the rating of a movie by scrapping the allocine website
 # @app.get("/movie/allocine/{movie_name}")
@@ -181,10 +187,10 @@ def get_mycomments(apikey: str):
 #     page = requests.get(url)
 #     soup = BeautifulSoup(page.content, "html.parser")
 #     print(soup.find("h2").findChildren())
-    # num_fiche_film = BeautifulSoup(request.urlopen(url).read(), "html.parser").find("a", {"class": "meta-title-link"})["href"].split("/")[-1]
-    # url = "https://www.allocine.fr/film/https://www.allocine.fr/film/fichefilm-"+num_fiche_film+"/critiques/spectateurs/"
-    # soup = BeautifulSoup(request.urlopen(url).read(), "html.parser")
-    # # get the public rating from the website
-    # rating = soup.find("span", {"class": "note"}).text
-    # title = soup.find("h1", {"class": "titlebar-link"}).text
-    # return {"original_title" : title, "rating": float(rating)}
+# num_fiche_film = BeautifulSoup(request.urlopen(url).read(), "html.parser").find("a", {"class": "meta-title-link"})["href"].split("/")[-1]
+# url = "https://www.allocine.fr/film/https://www.allocine.fr/film/fichefilm-"+num_fiche_film+"/critiques/spectateurs/"
+# soup = BeautifulSoup(request.urlopen(url).read(), "html.parser")
+# # get the public rating from the website
+# rating = soup.find("span", {"class": "note"}).text
+# title = soup.find("h1", {"class": "titlebar-link"}).text
+# return {"original_title" : title, "rating": float(rating)}
