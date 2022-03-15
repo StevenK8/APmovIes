@@ -93,7 +93,8 @@ def connect_db():
 
 
 @app.post("/movie")
-async def post_comment(apikey: str, movieName : str, comment : str, rate : int):
+async def post_comment(apikey: str, movieName : str, comment : str, 
+rate : int = Path(..., title="The rating of the item to get",le=10, gt=0)):
     try:
         db = connect_db()
         cur = db.cursor()
