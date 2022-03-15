@@ -2,6 +2,8 @@ from cmath import log
 from urllib import request, response
 import json 
 import pymysql
+import asyncio
+
 # from bs4 import BeautifulSoup
 # import requests
 from fastapi import FastAPI, Path, HTTPException
@@ -35,7 +37,8 @@ async def root():
 
 # gets the rating of a movie from imdb
 @app.get("/movie/imdb/{movie_name}")
-async def get_movie_rating_imdb(movie_name: str):
+def get_movie_rating_imdb(movie_name: str):
+    movie_name = parse_title(movie_name)
     url = "http://www.omdbapi.com/?t=" + movie_name + "&apikey=thewdb"
     # Get json data from the url
     request_response = request.urlopen(url)
@@ -43,13 +46,14 @@ async def get_movie_rating_imdb(movie_name: str):
     
     if(data["Response"] == "True"):
         # get imdbRating from the response
-        return {"original_title" : data["Title"],"rating": float(data["imdbRating"]), "vote_count": int(data["imdbVotes"].replace(",", ""))}
+        return {"original_title" : data["Title"],"rating": float(data["imdbRating"]), "vote_count": int(data["imdbVotes"].replace(",", "")), "id": data["imdbID"]}
     else:
         return {"Error": "Movie not found"}
     
 # get the rating of a movie from the movie database
 @app.get("/movie/tmdb/{movie_name}")
-async def get_movie_rating_tmdb(movie_name: str):
+def get_movie_rating_tmdb(movie_name: str):
+    movie_name = parse_title(movie_name)
     url = "https://api.themoviedb.org/3/search/movie?api_key="+TMDB_API_KEY+"&query=" + movie_name
     # Get json data from the url
     request_response = request.urlopen(url)
@@ -65,7 +69,8 @@ async def get_movie_rating_tmdb(movie_name: str):
 
 # gets the rating of a movie from metacritic
 @app.get("/movie/metacritic/{movie_name}")
-async def get_movie_rating_metacritic(movie_name: str):
+def get_movie_rating_metacritic(movie_name: str):
+    movie_name = parse_title(movie_name)
     url = "http://www.omdbapi.com/?t=" + movie_name + "&apikey=thewdb"
     # Get json data from the url
     request_response = request.urlopen(url)
@@ -77,10 +82,10 @@ async def get_movie_rating_metacritic(movie_name: str):
         return {"Error": "Movie not found"}
 
 @app.get("/movie/{movie_name}")
-async def get_movie_rating_api(movie_name: str):
-    imdb = await get_movie_rating_imdb(movie_name)
-    tmdb = await get_movie_rating_tmdb(movie_name)
-    metacritic = await get_movie_rating_metacritic(movie_name)
+def get_movie_rating_api(movie_name: str):
+    imdb = get_movie_rating_imdb(movie_name)
+    tmdb = get_movie_rating_tmdb(movie_name)
+    metacritic = get_movie_rating_metacritic(movie_name)
     try :
         if(imdb["Error"] == "Movie not found"):
             return imdb
@@ -95,10 +100,18 @@ async def get_movie_rating_api(movie_name: str):
 def connect_db():
     return pymysql.connect(host=MYSQL_HOST,user=MYSQL_USER, passwd=MYSQL_PASSWORD, db=MYSQL_DB)
 
+def parse_title(title):
+    # Capitalize the first letter of each word
+    title = title.title()
+    # Replace spaces or underscores or dashes with '+'
+    title = title.replace("+", "_")
+    title = title.replace("-", "_")
+    return title.replace(" ", "_")
 
 #TODO / CHANGER IDM EN MOVIE_NAME
 @app.post("/movie")
 async def post_comment(apikey: str, title : str, comment : Comment):
+    title = parse_title(title)
     try:
         db = connect_db()
         cur = db.cursor()
@@ -109,16 +122,19 @@ async def post_comment(apikey: str, title : str, comment : Comment):
             "error" : "wrong apikey !"
             }
         else:
+            # Authenticated
+            idm = createMovieIfNotExist(title)
+            if (idm == ""):
+                return {
+                    "error" : "movie not found"
+                }
+
             cur.execute("SELECT c.id from comments c, users u, movies m where c.idu=u.id AND m.id=c.idm AND apikey=%s AND m.title like %s", (apikey, title))
-            if cur.rowcount >= 1:
-                print("update")
+
+            if cur.rowcount < 1:
+                cur.execute("INSERT INTO comments(idu, idm, rating, text) VALUES (%s,%s,%s,%s)", (idu, idm, comment.rate, comment.comment))
+                comment = db.commit()
             else:
-                try:
-                    idm = await get_movie_rating_tmdb(title)["imdbID"]
-                except Exception:
-                    return {
-                        "error" : "movie not found"
-                    }
                 cur.execute("UPDATE comments SET rating = %s, text = %s WHERE comments.idm = %s AND comments.idu = %s;", ( comment.rate, comment.comment, idm, idu))
                 comment = db.commit()
     
@@ -127,7 +143,27 @@ async def post_comment(apikey: str, title : str, comment : Comment):
         db.close()
     except HTTPException as e:
         log.debug(e)
-    return comment 
+    return {title, comment}
+
+def createMovieIfNotExist(title):
+    try:
+        db = connect_db()
+        cur = db.cursor()
+        cur.execute("SELECT id from movies where title like %s", (title))
+        if cur.rowcount == 0:
+            imdb = get_movie_rating_imdb(title)
+            try:
+                idm = imdb["id"]
+                cur.execute("INSERT INTO movies(id, title) VALUES (%s,%s)", (idm, title))
+                db.commit()
+            except:
+                idm = ""
+        else:
+            idm = cur.fetchall();
+            
+        return idm
+    except HTTPException as e:
+        log.debug(e)
 
 @app.get("/movie/{movie_name}/comments")
 async def get_comments(movie_name: str):
