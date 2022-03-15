@@ -1,7 +1,6 @@
 from cmath import log
-from urllib import request
-import json
-from urllib.error import HTTPError, URLError 
+from urllib import request, response
+import json 
 import pymysql
 # from bs4 import BeautifulSoup
 # import requests
@@ -41,8 +40,12 @@ async def get_movie_rating_imdb(movie_name: str):
     # Get json data from the url
     request_response = request.urlopen(url)
     data = json.loads(request_response.read())
-    # get imdbRating from the response
-    return {"original_title" : data["Title"],"rating": float(data["imdbRating"]), "vote_count": int(data["imdbVotes"].replace(",", ""))}
+    
+    if(data["Response"] == "True"):
+        # get imdbRating from the response
+        return {"original_title" : data["Title"],"rating": float(data["imdbRating"]), "vote_count": int(data["imdbVotes"].replace(",", ""))}
+    else:
+        return {"Error": "Movie not found"}
     
 # get the rating of a movie from the movie database
 @app.get("/movie/tmdb/{movie_name}")
@@ -51,10 +54,14 @@ async def get_movie_rating_tmdb(movie_name: str):
     # Get json data from the url
     request_response = request.urlopen(url)
     data = json.loads(request_response.read())
-    # get the first movie from the response
-    movie = data["results"][0]
-    # get the rating from the movie
-    return {"original_title" : movie["original_title"], "rating": movie["vote_average"], "vote_count": movie["vote_count"]}
+    
+    if(data["total_results"] != 0):
+        # get the first movie from the response
+        movie = data["results"][0]
+        # get the rating from the movie
+        return {"original_title" : movie["original_title"], "rating": movie["vote_average"], "vote_count": movie["vote_count"]}
+    else:
+        return {"Error": "Movie not found"}
 
 # gets the rating of a movie from metacritic
 @app.get("/movie/metacritic/{movie_name}")
@@ -63,8 +70,11 @@ async def get_movie_rating_metacritic(movie_name: str):
     # Get json data from the url
     request_response = request.urlopen(url)
     data = json.loads(request_response.read())
-    # get imdbRating from the response
-    return {"original_title" : data["Title"],"rating": float(data["Metascore"])/10}
+    if(data["Response"] == "True"):
+        # get imdbRating from the response
+        return {"original_title" : data["Title"],"rating": float(data["Metascore"])/10}
+    else:
+        return {"Error": "Movie not found"}
 
 # @app.get("/movie/{movie_name}")
 # async def get_movie_rating(movie_name: str):
@@ -86,6 +96,8 @@ async def get_movie_rating_api(movie_name: str):
     imdb = await get_movie_rating_imdb(movie_name)
     tmdb = await get_movie_rating_tmdb(movie_name)
     metacritic = await get_movie_rating_metacritic(movie_name)
+    if(imdb["Error"] == "Movie not found"):
+        return imdb
     
     return {"original_title": imdb["original_title"], "rating": (float(imdb["rating"]) + tmdb["rating"] + float(metacritic["rating"])) / 3, "vote_count": int(imdb["vote_count"]) + tmdb["vote_count"]}
 
