@@ -4,10 +4,10 @@ import json
 import pymysql
 # from bs4 import BeautifulSoup
 # import requests
-from fastapi import FastAPI, Path, HTTPException
+from fastapi import FastAPI, Path, HTTPException, Query
 from pydantic import BaseModel, JsonError, UrlError
+from typing import Optional
 
-from fastapi.security.api_key import APIKeyQuery, APIKeyCookie, APIKeyHeader, APIKey
 
 
 import configparser
@@ -93,8 +93,11 @@ def connect_db():
 
 
 @app.post("/movie")
-async def post_comment(apikey: str, movieName : str, comment : str, 
-rate : int = Path(..., title="The rating of the item to get",le=10, gt=0)):
+async def post_comment(
+    apikey: str,
+    movieName : str,
+    comment : Optional[str] = Query(None, max_length=50),
+    rate : int = Path(..., title="The rating of the item to get",le=10, ge=0)):
     try:
         db = connect_db()
         cur = db.cursor()
