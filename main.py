@@ -1,23 +1,18 @@
 from cmath import log
 from urllib import request, response
-import json 
+import json
 import pymysql
 import asyncio
 
 # from bs4 import BeautifulSoup
 # import requests
-from fastapi import FastAPI, Path, HTTPException
+from fastapi import FastAPI, Path, HTTPException, Query
 from pydantic import BaseModel, JsonError, UrlError
-
-from fastapi.security.api_key import APIKeyQuery, APIKeyCookie, APIKeyHeader, APIKey
-
-class Comment(BaseModel):
-    comment: str = ""
-    rate: int = Path(..., title = "rate", gt=0, le=10)
+from typing import Optional
 
 
 import configparser
-CONFIG_PATH = './config.ini'  
+CONFIG_PATH = './config.ini'
 CONFIG = configparser.RawConfigParser()
 CONFIG.read(CONFIG_PATH)
 
@@ -43,31 +38,36 @@ def get_movie_rating_imdb(movie_name: str):
     # Get json data from the url
     request_response = request.urlopen(url)
     data = json.loads(request_response.read())
-    
+
     if(data["Response"] == "True"):
         # get imdbRating from the response
-        return {"original_title" : data["Title"],"rating": float(data["imdbRating"]), "vote_count": int(data["imdbVotes"].replace(",", "")), "id": data["imdbID"]}
+        return {"original_title": data["Title"], "rating": float(data["imdbRating"]), "vote_count": int(data["imdbVotes"].replace(",", "")), "id": data["imdbID"]}
     else:
         return {"Error": "Movie not found"}
-    
+
 # get the rating of a movie from the movie database
+
+
 @app.get("/movie/tmdb/{movie_name}")
 def get_movie_rating_tmdb(movie_name: str):
-    movie_name = parse_title(movie_name)
-    url = "https://api.themoviedb.org/3/search/movie?api_key="+TMDB_API_KEY+"&query=" + movie_name
+    movie_name = parse_title_tmdb(movie_name)
+    url = "https://api.themoviedb.org/3/search/movie?api_key=" + \
+        TMDB_API_KEY+"&query=" + movie_name
     # Get json data from the url
     request_response = request.urlopen(url)
     data = json.loads(request_response.read())
-    
+
     if(data["total_results"] != 0):
         # get the first movie from the response
         movie = data["results"][0]
         # get the rating from the movie
-        return {"original_title" : movie["original_title"], "rating": movie["vote_average"], "vote_count": movie["vote_count"]}
+        return {"original_title": movie["original_title"], "rating": movie["vote_average"], "vote_count": movie["vote_count"]}
     else:
         return {"Error": "Movie not found"}
 
 # gets the rating of a movie from metacritic
+
+
 @app.get("/movie/metacritic/{movie_name}")
 def get_movie_rating_metacritic(movie_name: str):
     movie_name = parse_title(movie_name)
@@ -75,30 +75,28 @@ def get_movie_rating_metacritic(movie_name: str):
     # Get json data from the url
     request_response = request.urlopen(url)
     data = json.loads(request_response.read())
-    if(data["Response"] == "True"):
+    if(data["Response"] == "True" and data["Metascore"] != "N/A"):
         # get imdbRating from the response
-        return {"original_title" : data["Title"],"rating": float(data["Metascore"])/10}
+        return {"original_title": data["Title"], "rating": float(data["Metascore"])/10}
     else:
         return {"Error": "Movie not found"}
+
 
 @app.get("/movie/{movie_name}")
 def get_movie_rating_api(movie_name: str):
     imdb = get_movie_rating_imdb(movie_name)
     tmdb = get_movie_rating_tmdb(movie_name)
     metacritic = get_movie_rating_metacritic(movie_name)
-    try :
-        if(imdb["Error"] == "Movie not found"):
-            return imdb
-        elif tmdb["Error"] == "Movie not found":
-            return tmdb
-        elif metacritic["Error"] == "Movie not found":
-            return metacritic
-    except:
+
+    if("Error" in imdb or "Error" in tmdb or "Error" in metacritic):
+        return {"Error": "Movie not found"}
+    else:
         return {"original_title": imdb["original_title"], "rating": (float(imdb["rating"]) + tmdb["rating"] + float(metacritic["rating"])) / 3, "vote_count": int(imdb["vote_count"]) + tmdb["vote_count"]}
 
 
 def connect_db():
-    return pymysql.connect(host=MYSQL_HOST,user=MYSQL_USER, passwd=MYSQL_PASSWORD, db=MYSQL_DB)
+    return pymysql.connect(host=MYSQL_HOST, user=MYSQL_USER, passwd=MYSQL_PASSWORD, db=MYSQL_DB)
+
 
 def parse_title(title):
     # Capitalize the first letter of each word
@@ -108,77 +106,98 @@ def parse_title(title):
     title = title.replace("-", "_")
     return title.replace(" ", "_")
 
-#TODO / CHANGER IDM EN MOVIE_NAME
+
+def parse_title_tmdb(title):
+    title = title.title()
+    # Replace spaces or underscores or dashes with '+'
+    title = title.replace("+", "")
+    title = title.replace("-", "")
+    return title.replace(" ", "")
+
+
 @app.post("/movie")
-async def post_comment(apikey: str, title : str, comment : Comment):
-    title = parse_title(title)
+async def post_comment(
+        apikey: str,
+        movieName: str,
+        rate: float,
+        comment: Optional[str] = Query(None, max_length=150)):
+
+    movieName = parse_title(movieName)
     try:
         db = connect_db()
         cur = db.cursor()
         cur.execute("SELECT id from users where apikey=%s", (apikey))
-        idu = cur.fetchall();
+        idu = cur.fetchone()[0]
         if cur.rowcount == 0:
             return {
-            "error" : "wrong apikey !"
+                "error": "wrong apikey !"
             }
         else:
             # Authenticated
-            idm = createMovieIfNotExist(title)
+            idm = createMovieIfNotExist(movieName)
             if (idm == ""):
                 return {
-                    "error" : "movie not found"
+                    "error": "movie not found"
                 }
 
-            cur.execute("SELECT c.id from comments c, users u, movies m where c.idu=u.id AND m.id=c.idm AND apikey=%s AND m.title like %s", (apikey, title))
+            cur.execute(
+                "SELECT c.id from comments c, users u, movies m where c.idu=u.id AND m.id=c.idm AND apikey=%s AND m.title like %s", (apikey, movieName))
 
             if cur.rowcount < 1:
-                cur.execute("INSERT INTO comments(idu, idm, rating, text) VALUES (%s,%s,%s,%s)", (idu, idm, comment.rate, comment.comment))
-                comment = db.commit()
+                cur.execute(
+                    "INSERT INTO comments(idu, idm, rating, text) VALUES (%s,%s,%s,%s)", (idu, idm, rate, comment))
+                db.commit()
             else:
-                cur.execute("UPDATE comments SET rating = %s, text = %s WHERE comments.idm = %s AND comments.idu = %s;", ( comment.rate, comment.comment, idm, idu))
-                comment = db.commit()
-    
+                cur.execute(
+                    "UPDATE comments SET rating = %s, text = %s WHERE comments.idm = %s AND comments.idu = %s;", (rate, comment, idm, idu))
+                db.commit()
+
         cur.close()
         del cur
         db.close()
     except HTTPException as e:
         log.debug(e)
-    return {title, comment}
+    return {"title": movieName,"comment": comment, "rate": rate}
+
 
 def createMovieIfNotExist(title):
     try:
         db = connect_db()
         cur = db.cursor()
-        cur.execute("SELECT id from movies where title like %s", (title))
+        cur.execute("SELECT id from movies where title=%s", (title))
         if cur.rowcount == 0:
             imdb = get_movie_rating_imdb(title)
             try:
                 idm = imdb["id"]
-                cur.execute("INSERT INTO movies(id, title) VALUES (%s,%s)", (idm, title))
+                cur.execute(
+                    "INSERT INTO movies(id, title) VALUES (%s,%s)", (idm, title))
                 db.commit()
             except:
                 idm = ""
         else:
-            idm = cur.fetchall();
+            idm = cur.fetchone()[0]
             
         return idm
     except HTTPException as e:
         log.debug(e)
 
+
 @app.get("/movie/{movie_name}/comments")
 async def get_comments(movie_name: str):
     db = connect_db()
     cur = db.cursor()
-    cur.execute("SELECT text, rating FROM comments c, movies m WHERE c.idm = m.id and m.title=%s", (movie_name))
-    comments = cur.fetchall() 
+    cur.execute(
+        "SELECT text, rating FROM comments c, movies m WHERE c.idm = m.id and m.title=%s", (movie_name))
+    comments = cur.fetchall()
     if cur.rowcount == 0:
         return {
-        "error" : "wrong movie name !"
+            "error": "wrong movie name !"
         }
     cur.close()
     del cur
     db.close()
     return comments
+
 
 @app.post("/")
 async def create_user(name: str):
@@ -194,7 +213,8 @@ async def create_user(name: str):
         db.close()
     except HTTPException as e:
         log.debug(e)
-    return "Your apikey : " , apiKeyUser, " keep it confidential"
+    return "Your apikey : ", apiKeyUser, " keep it confidential"
+
 
 @app.delete("/")
 async def delete_user(apikey: str):
@@ -207,7 +227,7 @@ async def delete_user(apikey: str):
     except HTTPException as e:
         log.debug(e)
     return user
-     
+
 
 @app.get("/mycomments/{name}")
 def get_mycomments(apikey: str):
@@ -218,13 +238,12 @@ def get_mycomments(apikey: str):
     idu = cur.fetchall()
     if cur.rowcount == 0:
         return {
-        "error" : "wrong apikey !"
+            "error": "wrong apikey !"
         }
     else:
         cur.execute("SELECT rating, text FROM comments WHERE idu=%s", (idu))
-        mycomments = cur.fetchall() 
+        mycomments = cur.fetchall()
         cur.close()
         del cur
         db.close()
         return mycomments
-
