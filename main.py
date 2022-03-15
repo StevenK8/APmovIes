@@ -186,6 +186,7 @@ def createMovieIfNotExist(title):
 
 @app.get("/movie/{movie_name}/comments")
 async def get_comments(movie_name: str):
+    movie_name = parse_title(movie_name)
     db = connect_db()
     cur = db.cursor()
     cur.execute(
@@ -207,7 +208,7 @@ async def create_user(name: str):
         db = connect_db()
         cur = db.cursor()
         cur.execute("INSERT INTO users(name) VALUES (%s)", (name))
-        user = db.commit()
+        db.commit()
 
         cur.execute("SELECT apikey from users where name=%s", (name))
         apiKeyUser = cur.fetchall()
