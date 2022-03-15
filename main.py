@@ -12,7 +12,7 @@ from typing import Optional
 
 
 import configparser
-CONFIG_PATH = './config.ini'
+CONFIG_PATH = './config/config.ini'
 CONFIG = configparser.RawConfigParser()
 CONFIG.read(CONFIG_PATH)
 
