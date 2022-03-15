@@ -76,35 +76,27 @@ async def get_movie_rating_metacritic(movie_name: str):
     else:
         return {"Error": "Movie not found"}
 
-# @app.get("/movie/{movie_name}")
-# async def get_movie_rating(movie_name: str):
-#     urlOmdb = "http://www.omdbapi.com/?t=" + movie_name + "&apikey=thewdb"
-#     urlTmdb = "https://api.themoviedb.org/3/search/movie?api_key="+TMDB_API_KEY+"&query=" + movie_name
-
-
-#     request_responseOmdb = request.urlopen(urlOmdb)
-#     dataOmdb = json.loads(request_responseOmdb.read())
-#     request_responseTmdb = request.urlopen(urlTmdb)
-#     dataTmdb = json.loads(request_responseTmdb.read())
-
-#     movie = dataTmdb["results"][0]
-
-#     return {"original_title": dataOmdb["Title"], "rating": (float(dataOmdb["imdbRating"]) + movie["vote_average"] + ( float(dataOmdb["Metascore"])/10)) / 3, "vote_count": int(dataOmdb["imdbVotes"].replace(",", "")) + movie["vote_count"] }
-
 @app.get("/movie/{movie_name}")
 async def get_movie_rating_api(movie_name: str):
     imdb = await get_movie_rating_imdb(movie_name)
     tmdb = await get_movie_rating_tmdb(movie_name)
     metacritic = await get_movie_rating_metacritic(movie_name)
-    if(imdb["Error"] == "Movie not found"):
-        return imdb
-    
-    return {"original_title": imdb["original_title"], "rating": (float(imdb["rating"]) + tmdb["rating"] + float(metacritic["rating"])) / 3, "vote_count": int(imdb["vote_count"]) + tmdb["vote_count"]}
+    try :
+        if(imdb["Error"] == "Movie not found"):
+            return imdb
+        elif tmdb["Error"] == "Movie not found":
+            return tmdb
+        elif metacritic["Error"] == "Movie not found":
+            return metacritic
+    except:
+        return {"original_title": imdb["original_title"], "rating": (float(imdb["rating"]) + tmdb["rating"] + float(metacritic["rating"])) / 3, "vote_count": int(imdb["vote_count"]) + tmdb["vote_count"]}
 
 
 def connect_db():
     return pymysql.connect(host=MYSQL_HOST,user=MYSQL_USER, passwd=MYSQL_PASSWORD, db=MYSQL_DB)
 
+
+#TODO / CHANGER IDM EN MOVIE_NAME
 @app.post("/movie")
 async def post_comment(apikey: str, idm : str, comment : Comment):
     try:
@@ -167,7 +159,7 @@ async def delete_user(apikey: str):
         db.close()
     except HTTPException as e:
         log.debug(e)
-    return user;
+    return user
      
 
 @app.get("/mycomments/{name}")
@@ -176,7 +168,7 @@ def get_mycomments(apikey: str):
     cur = db.cursor()
 
     cur.execute("SELECT id from users where apikey=%s", (apikey))
-    idu = cur.fetchall();
+    idu = cur.fetchall()
     if cur.rowcount == 0:
         return {
         "error" : "wrong apikey !"
@@ -189,20 +181,3 @@ def get_mycomments(apikey: str):
         db.close()
         return mycomments
 
-#@app.put("/mycomments/{name}")
-
-
-# gets the rating of a movie by scrapping the allocine website
-# @app.get("/movie/allocine/{movie_name}")
-# async def get_movie_rating(movie_name: str):
-#     url = "https://www.allocine.fr/rechercher/?q=" + movie_name
-#     page = requests.get(url)
-#     soup = BeautifulSoup(page.content, "html.parser")
-#     print(soup.find("h2").findChildren())
-# num_fiche_film = BeautifulSoup(request.urlopen(url).read(), "html.parser").find("a", {"class": "meta-title-link"})["href"].split("/")[-1]
-# url = "https://www.allocine.fr/film/https://www.allocine.fr/film/fichefilm-"+num_fiche_film+"/critiques/spectateurs/"
-# soup = BeautifulSoup(request.urlopen(url).read(), "html.parser")
-# # get the public rating from the website
-# rating = soup.find("span", {"class": "note"}).text
-# title = soup.find("h1", {"class": "titlebar-link"}).text
-# return {"original_title" : title, "rating": float(rating)}
