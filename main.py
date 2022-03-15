@@ -96,9 +96,8 @@ def connect_db():
     return pymysql.connect(host=MYSQL_HOST,user=MYSQL_USER, passwd=MYSQL_PASSWORD, db=MYSQL_DB)
 
 
-#TODO / CHANGER IDM EN MOVIE_NAME
 @app.post("/movie")
-async def post_comment(apikey: str, idm : str, comment : Comment):
+async def post_comment(apikey: str, movieName : str, comment : Comment):
     try:
         db = connect_db()
         cur = db.cursor()
@@ -109,14 +108,21 @@ async def post_comment(apikey: str, idm : str, comment : Comment):
             "error" : "wrong apikey !"
             }
         else:
-            cur.execute("INSERT INTO comments(idu, idm, rating, text) VALUES (%s,%s,%s,%s)", (idu, idm, comment.rate, comment.comment))
-            comment = db.commit()
-            cur.close()
-            del cur
-            db.close()
+            cur.execute("SELECT id from movies where title=%s", (movieName))
+            idm = cur.fetchall()
+            if cur.rowcount == 0:
+                return {
+                    "error" : "this movie doesn't exist or is not in DB"
+                }
+            else:
+                cur.execute("INSERT INTO comments(idu, idm, rating, text) VALUES (%s,%s,%s,%s)", (idu, idm, comment.rate, comment.comment))
+                commit = db.commit()
+                cur.close()
+                del cur
+                db.close()
     except HTTPException as e:
         log.debug(e)
-    return comment 
+    return comment
 
 @app.get("/movie/{movie_name}/comments")
 async def get_comments(movie_name: str):

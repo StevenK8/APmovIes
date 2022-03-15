@@ -1,6 +1,13 @@
 import main
 import asyncio
 
+import configparser
+CONFIG_PATH = './config.ini'  
+CONFIG = configparser.RawConfigParser()
+CONFIG.read(CONFIG_PATH)
+
+
+
 async def test_movie_rating():
     avatar = await main.get_movie_rating_api("Avatar")
     assert 0 <= avatar["rating"] <= float('inf')
@@ -24,13 +31,16 @@ async def test_movie_rating_metacritic():
     assert 0 <= avatar["rating"] <= 10
     assert isinstance(avatar["original_title"], str)
 
-async def test_post_comment()
+async def test_post_comment():
+    postResult = await main.post_comment("4a5fb1e7-9002-11ec-92c2-7c0507cfc855", "Avatar", {"comment": "commentaire","rate": 10})
+    assert postResult == {"comment": "commentaire","rate": 10}
 
     
 asyncio.run(test_movie_rating())
 asyncio.run(test_movie_rating_imdb())
 asyncio.run(test_movie_rating_tmdb())
 asyncio.run(test_movie_rating_metacritic())
+asyncio.run(test_post_comment())
 
 
 
