@@ -119,7 +119,7 @@ def parse_title_tmdb(title):
 async def post_comment(
         apikey: str,
         movieName: str,
-        rate: float,
+        rate: float = Query(..., gt=0, lt=10),
         comment: Optional[str] = Query(None, max_length=150)):
 
     movieName = parse_title(movieName)
