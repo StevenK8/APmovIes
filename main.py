@@ -123,6 +123,8 @@ async def post_comment(
         comment: Optional[str] = Query(None, max_length=150)):
 
     movieName = parse_title(movieName)
+    if (rate > 10 or rate < 0):
+        return {"Error": "Rate must be between 0 and 10"}
     try:
         db = connect_db()
         cur = db.cursor()
