@@ -12,7 +12,7 @@ from typing import Optional
 
 
 import configparser
-CONFIG_PATH = './config.ini'
+CONFIG_PATH = './config/config.ini'
 CONFIG = configparser.RawConfigParser()
 CONFIG.read(CONFIG_PATH)
 
@@ -186,6 +186,7 @@ def createMovieIfNotExist(title):
 
 @app.get("/movie/{movie_name}/comments")
 async def get_comments(movie_name: str):
+    movie_name = parse_title(movie_name)
     db = connect_db()
     cur = db.cursor()
     cur.execute(
@@ -207,7 +208,7 @@ async def create_user(name: str):
         db = connect_db()
         cur = db.cursor()
         cur.execute("INSERT INTO users(name) VALUES (%s)", (name))
-        user = db.commit()
+        db.commit()
 
         cur.execute("SELECT apikey from users where name=%s", (name))
         apiKeyUser = cur.fetchall()
@@ -243,7 +244,7 @@ def get_mycomments(apikey: str):
             "error": "wrong apikey !"
         }
     else:
-        cur.execute("SELECT rating, text FROM comments WHERE idu=%s", (idu))
+        cur.execute("SELECT m.title, c.rating, c.text FROM comments c, movies m WHERE m.id=c.idm AND idu=%s", (idu))
         mycomments = cur.fetchall()
         cur.close()
         del cur

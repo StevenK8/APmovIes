@@ -7,7 +7,8 @@ COPY ./requirements.txt /code/requirements.txt
 RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 
 # 
-COPY ./main.py config.* /code/
+COPY ./main.py /code/
+COPY /config/useless /config/config.* /code/config/
 
 # 
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80"]
