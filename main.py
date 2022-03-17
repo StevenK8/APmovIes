@@ -85,11 +85,28 @@ def get_movie_rating_api(movie_name: str):
     tmdb = get_movie_rating_tmdb(movie_name)
     metacritic = get_movie_rating_metacritic(movie_name)
 
-    if("Error" in imdb or "Error" in tmdb or "Error" in metacritic):
-        return {"Error": "Movie not found"}
+    if "Error" in imdb :
+        if "Error" in tmdb:
+            if "Error" in metacritic:
+                return {"Error": "Movie not found"}
+            else: 
+                return {"original_title": metacritic["original_title"], "rating": float(metacritic["rating"])}
+        else:
+            if "Error" in metacritic:
+                return {"original_title": tmdb["original_title"], "rating": tmdb["rating"], "vote_count": tmdb["vote_count"]}
+            else:
+                return {"original_title": metacritic["original_title"], "rating": (tmdb["rating"] + float(metacritic["rating"])) / 2, "vote_count": tmdb["vote_count"]}
     else:
-        return {"original_title": imdb["original_title"], "rating": (float(imdb["rating"]) + tmdb["rating"] + float(metacritic["rating"])) / 3, "vote_count": int(imdb["vote_count"]) + tmdb["vote_count"]}
-
+        if "Error" in tmdb:
+            if "Error" in metacritic:
+               return {"original_title": imdb["original_title"], "rating": float(imdb["rating"]), "vote_count": int(imdb["vote_count"])}
+            else:
+                return {"original_title": imdb["original_title"], "rating": (float(imdb["rating"]) + float(metacritic["rating"])) / 2, "vote_count": int(imdb["vote_count"]) }
+        else:
+            if "Error" in metacritic:
+                return {"original_title": imdb["original_title"], "rating": (float(imdb["rating"]) + tmdb["rating"]) / 2, "vote_count": int(imdb["vote_count"]) + tmdb["vote_count"]}
+            else:
+                return {"original_title": imdb["original_title"], "rating": (float(imdb["rating"]) + tmdb["rating"] + float(metacritic["rating"])) / 3, "vote_count": int(imdb["vote_count"]) + tmdb["vote_count"]}
 
 @app.get("/movie/top_rated")
 def get_top_rating(page: int = 1, date_min: Optional[str] = None, date_max: Optional[str] = None):
