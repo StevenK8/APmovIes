@@ -1,5 +1,6 @@
 from cmath import log
 from datetime import date
+import datetime
 from urllib import request, response
 import json
 import pymysql
@@ -8,7 +9,7 @@ import asyncio
 # from bs4 import BeautifulSoup
 # import requests
 from fastapi import FastAPI, Path, HTTPException, Query
-from pydantic import BaseModel, JsonError, UrlError
+from pydantic import BaseModel, JsonError, UrlError, Field
 from typing import Optional
 
 
@@ -109,7 +110,7 @@ def get_movie_rating_api(movie_name: str):
                 return {"original_title": imdb["original_title"], "rating": (float(imdb["rating"]) + tmdb["rating"] + float(metacritic["rating"])) / 3, "vote_count": int(imdb["vote_count"]) + tmdb["vote_count"]}
 
 @app.get("/movie/top_rated")
-def get_top_rating(page: int = 1, date_min: Optional[str] = None, date_max: Optional[str] = None):
+def get_top_rating(page: int = 1, date_min: Optional[date] = None, date_max: Optional[date] = None):
     url = "https://api.themoviedb.org/3/movie/top_rated?api_key=" + \
         TMDB_API_KEY+"&language=en-US&region=fr&page=" + str(page)
     # Get json data from the url
@@ -117,6 +118,7 @@ def get_top_rating(page: int = 1, date_min: Optional[str] = None, date_max: Opti
     data = json.loads(request_response.read())
 
     filtered_data = []
+    print(date_min)
     
     # Filter data by date
     for movie in data["results"]:
@@ -137,30 +139,40 @@ def get_top_rating(page: int = 1, date_min: Optional[str] = None, date_max: Opti
 
     return filtered_data
 
-# Compares dates that are in the format YYYY-MM-DD
+# Compares two dates
 def later_than(date1, date2):
+    # convert date1 to date object
     date1 = date1.split("-")
-    date2 = date2.split("-")
-    if(len(date1)>=1 and len(date2)>=1):
-        if(int(date1[0]) > int(date2[0])):
-            return True
-        elif(int(date1[0]) < int(date2[0])):
-            return False
-        if (len(date1)>=2 and len(date2)>=2):
-            if(int(date1[1]) > int(date2[1])):
-                return True
-            elif(int(date1[1]) < int(date2[1])):
-                return False
-            if (len(date1)>=3 and len(date2)>=3):
-                if(int(date1[2]) > int(date2[2])):
-                    return True
-                elif(int(date1[2]) < int(date2[2])):
-                    return False
-                else:
-                    return False
-            else:
-                return False
-    return False
+    date1 = datetime.date(int(date1[0]), int(date1[1]), int(date1[2]))
+    if(date1 > date2):
+        return True
+    else:
+        return False
+
+# Compares dates that are in the format YYYY-MM-DD
+# def later_than(date1, date2):
+#     date1 = date1.split("-")
+#     date2 = date2.split("-")
+#     if(len(date1)>=1 and len(date2)>=1):
+#         if(int(date1[0]) > int(date2[0])):
+#             return True
+#         elif(int(date1[0]) < int(date2[0])):
+#             return False
+#         if (len(date1)>=2 and len(date2)>=2):
+#             if(int(date1[1]) > int(date2[1])):
+#                 return True
+#             elif(int(date1[1]) < int(date2[1])):
+#                 return False
+#             if (len(date1)>=3 and len(date2)>=3):
+#                 if(int(date1[2]) > int(date2[2])):
+#                     return True
+#                 elif(int(date1[2]) < int(date2[2])):
+#                     return False
+#                 else:
+#                     return False
+#             else:
+#                 return False
+#     return False
 
 def connect_db():
     return pymysql.connect(host=MYSQL_HOST, user=MYSQL_USER, passwd=MYSQL_PASSWORD, db=MYSQL_DB)
