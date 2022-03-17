@@ -258,6 +258,35 @@ async def delete_user(apikey: str):
         log.debug(e)
     return user
 
+@app.delete("/mycomment")
+async def delete_comment(apikey: str, movie_name: str):
+    try:
+        db = connect_db()
+        cur = db.cursor()
+        cur.execute("SELECT id FROM users WHERE apikey=%s", (apikey))
+        idu = cur.fetchall()
+
+        if cur.rowcount == 0:
+            return {
+                "error": "wrong apikey !"
+            }
+        else:
+            cur.execute("SELECT id FROM movies WHERE title=%s", (movie_name))
+            idm = cur.fetchone()[0]
+            if cur.rowcount == 0:
+                return {
+                    "error": "wrong title !"
+                }
+            else:
+                cur.execute("DELETE FROM comments WHERE idu=%s AND idm=%s", (idu, idm))
+                cur.close()
+                del cur
+                db.commit()
+                db.close()
+                return mycomment
+    except HTTPException as e:
+        log.debug(e)
+    return mycomment
 
 @app.get("/mycomments/")
 def get_mycomments(apikey: str):
