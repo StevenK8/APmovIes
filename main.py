@@ -232,7 +232,7 @@ async def delete_user(apikey: str):
     return user
 
 
-@app.get("/mycomments/{name}")
+@app.get("/mycomments/")
 def get_mycomments(apikey: str):
     db = connect_db()
     cur = db.cursor()
