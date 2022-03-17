@@ -4,7 +4,7 @@ APmovIes est une APi permettant de récupérer les notes et les descriptifs de f
 
 De plus, nous permettons à nos utilisateurs de créer un compte rapidement afin de commenter et noter eux-même leur films.
 
-Ils peuvent donc récupérer les notes de chacun des 3 sites de critiques cités précedemment mais aussi avoir une moyenne des 3 sites pondéré sur le nombre de votants.
+Ils peuvent donc récupérer les notes de chacun des 3 sites de critique cités précedemment mais aussi avoir une moyenne des 3 sites pondéré sur le nombre de votants.
 
 Puisque nos utilisateurs peuvent voter sur notre API, il nous a semblé interessant qu'ils puissent aussi consulter la note moyenne d'un film depuis notre Base de données (qui est bien sûr moins dense que IMDB etc...).
 
