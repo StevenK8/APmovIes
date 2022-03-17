@@ -39,15 +39,13 @@ def get_movie_rating_imdb(movie_name: str):
     request_response = request.urlopen(url)
     data = json.loads(request_response.read())
 
-    if(data["Response"] == "True"):
+    if(data["Response"] == "True" and data["imdbRating"] != "N/A"):
         # get imdbRating from the response
         return {"original_title": data["Title"], "rating": float(data["imdbRating"]), "vote_count": int(data["imdbVotes"].replace(",", "")), "id": data["imdbID"]}
     else:
         return {"Error": "Movie not found"}
 
 # get the rating of a movie from the movie database
-
-
 @app.get("/movie/tmdb/{movie_name}")
 def get_movie_rating_tmdb(movie_name: str):
     movie_name = parse_title_tmdb(movie_name)
@@ -92,6 +90,17 @@ def get_movie_rating_api(movie_name: str):
         return {"Error": "Movie not found"}
     else:
         return {"original_title": imdb["original_title"], "rating": (float(imdb["rating"]) + tmdb["rating"] + float(metacritic["rating"])) / 3, "vote_count": int(imdb["vote_count"]) + tmdb["vote_count"]}
+
+
+@app.get("/movie/top_rated")
+def get_top_rating():
+    url = "https://api.themoviedb.org/3/movie/top_rated?api_key=" + \
+        TMDB_API_KEY+"&language=en-US&region=fr&page=1" 
+    # Get json data from the url
+    request_response = request.urlopen(url)
+    data = json.loads(request_response.read())
+
+    return data
 
 
 def connect_db():
