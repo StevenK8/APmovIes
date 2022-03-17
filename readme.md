@@ -24,6 +24,10 @@ Nos tests se trouvent dans test.py
 
 Tout notre code est en python.
 
+L'installation est déployée avec un conteneur docker qui est build automatiquement avec les actions github.
+
+Le conteneur est accessible en ligne à travers Traefik (TLS Cloudflare), et une base de données mariadb est installée.
+
 Merci pour votre attention.
 
 Steven et Damien
