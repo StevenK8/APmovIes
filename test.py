@@ -78,14 +78,16 @@ asyncio.run(main.post_comment(apikey,"Cars", 8, "J'ai adoré"))
 #Il commente un film qui n'existe pas
 asyncio.run(main.post_comment(apikey,"gfgfgfgfgfgf", 5.5, "film très cool"))
 #Il récupère SES commentaires et on remarque qu'il n'y a que le dernier comm Avatar et le comm Cars
-print(main.get_mycomments(apikey))
+print("Mes comms : " ,main.get_mycomments(apikey))
+print("suppression")
+
+#Il supprime son commentaire
+asyncio.run(main.delete_comment(apikey,"Cars"))
+print("Mes comms : ", main.get_mycomments(apikey))
 
 
 #Il regarde tous les commentaires du film Avatar: il y en a un autre qui ne lui appartient pas
 print(asyncio.run(main.get_comments("Avatar")))
-
-#Il supprime son commentaire
-#asyncio.run(main.delete_comment(apikey,"Cars"))
 
 #On supprime le user
 asyncio.run(main.delete_user(apikey))

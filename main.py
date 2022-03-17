@@ -356,10 +356,9 @@ async def delete_comment(apikey: str, movie_name: str):
                 del cur
                 db.commit()
                 db.close()
-                return mycomment
+                return 
     except HTTPException as e:
         log.debug(e)
-    return mycomment
 
 @app.get("/mycomments/")
 def get_mycomments(apikey: str):
