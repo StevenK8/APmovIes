@@ -39,6 +39,11 @@ async def test_post_get_comment():
     comments = main.get_mycomments("4a5fb1e7-9002-11ec-92c2-7c0507cfc855")
     assert comments[0][3] == "commentaire"
     assert comments[0][2] == 10
+    nb_comments = len(comments)
+    print(nb_comments)
+    await main.delete_comment("4a5fb1e7-9002-11ec-92c2-7c0507cfc855", "The Wolf of Wall street")
+    comments = main.get_mycomments("4a5fb1e7-9002-11ec-92c2-7c0507cfc855")
+    #assert len(comments) == nb_comments - 1
 
 
 async def test_get_comments_movie():
