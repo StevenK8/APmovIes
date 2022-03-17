@@ -282,7 +282,8 @@ async def get_comments(movie_name: str):
     cur.close()
     del cur
     db.close()
-    return {"title": comments[0][0] ,"user": comments[0][1], "comment": comments[0][2], "rate": comments[0][3]} 
+    # return {"title": comments[0][0] ,"user": comments[0][1], "comment": comments[0][2], "rate": comments[0][3]} 
+    return comments
 
 @app.get("/movie/{movie_name}/")
 async def get_rating_apmovie(movie_name: str):
@@ -373,9 +374,11 @@ def get_mycomments(apikey: str):
             "error": "wrong apikey !"
         }
     else:
-        cur.execute("SELECT m.title, c.rating, c.text FROM comments c, movies m WHERE m.id=c.idm AND idu=%s", (idu))
+        cur.execute("SELECT u.name, m.title, c.rating, c.text FROM comments c, movies m, users u WHERE m.id=c.idm AND c.idu=u.id AND idu=%s", (idu))
         mycomments = cur.fetchall()
         cur.close()
         del cur
         db.close()
+        # return {"user": mycomments[0][0], "comments" : {"title": mycomments[0][1], "rating": mycomments[0][2], "comment": mycomments[0][3]}}
+        
         return mycomments
