@@ -115,14 +115,14 @@ def parse_title_tmdb(title):
     return title.replace(" ", "")
 
 
-@app.post("/movie")
+@app.post("/movie/{movie_name}/comment")
 async def post_comment(
         apikey: str,
-        movieName: str,
+        movie_name: str,
         rate: float = Query(..., gt=0, lt=10),
         comment: Optional[str] = Query(None, max_length=150)):
 
-    movieName = parse_title(movieName)
+    movie_name = parse_title(movie_name)
     if (rate > 10 or rate < 0):
         return {"Error": "Rate must be between 0 and 10"}
     try:
@@ -136,14 +136,14 @@ async def post_comment(
             }
         else:
             # Authenticated
-            idm = createMovieIfNotExist(movieName)
+            idm = createMovieIfNotExist(movie_name)
             if (idm == ""):
                 return {
                     "error": "movie not found"
                 }
 
             cur.execute(
-                "SELECT c.id from comments c, users u, movies m where c.idu=u.id AND m.id=c.idm AND apikey=%s AND m.title like %s", (apikey, movieName))
+                "SELECT c.id from comments c, users u, movies m where c.idu=u.id AND m.id=c.idm AND apikey=%s AND m.title like %s", (apikey, movie_name))
 
             if cur.rowcount < 1:
                 cur.execute(
@@ -159,7 +159,7 @@ async def post_comment(
         db.close()
     except HTTPException as e:
         log.debug(e)
-    return {"title": movieName,"comment": comment, "rate": rate}
+    return {"title": movie_name,"comment": comment, "rate": rate}
 
 
 def createMovieIfNotExist(title):
@@ -190,7 +190,7 @@ async def get_comments(movie_name: str):
     db = connect_db()
     cur = db.cursor()
     cur.execute(
-        "SELECT text, rating FROM comments c, movies m WHERE c.idm = m.id and m.title=%s", (movie_name))
+        "SELECT name, text, rating FROM comments c, movies m, users u WHERE c.idm = m.id and u.id=c.idu and m.title=%s", (movie_name))
     comments = cur.fetchall()
     if cur.rowcount == 0:
         return {
