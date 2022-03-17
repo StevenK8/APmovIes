@@ -273,7 +273,7 @@ async def get_comments(movie_name: str):
     db = connect_db()
     cur = db.cursor()
     cur.execute(
-        "SELECT name, text, rating FROM comments c, movies m, users u WHERE c.idm = m.id and u.id=c.idu and m.title=%s", (movie_name))
+        "SELECT title, name, text, rating FROM comments c, movies m, users u WHERE c.idm = m.id and u.id=c.idu and m.title=%s", (movie_name))
     comments = cur.fetchall()
     if cur.rowcount == 0:
         return {
@@ -282,7 +282,7 @@ async def get_comments(movie_name: str):
     cur.close()
     del cur
     db.close()
-    return comments
+    return {"title": comments[0][0] ,"user": comments[0][1], "comment": comments[0][2], "rate": comments[0][3]} 
 
 @app.get("/movie/{movie_name}/")
 async def get_rating_apmovie(movie_name: str):
@@ -290,7 +290,7 @@ async def get_rating_apmovie(movie_name: str):
     db = connect_db()
     cur = db.cursor()
     cur.execute(
-        "SELECT avg(rating) FROM comments c, movies m WHERE c.idm = m.id and m.title=%s", (movie_name))
+        "SELECT title, avg(rating) FROM comments c, movies m WHERE c.idm = m.id and m.title=%s", (movie_name))
     avgRating = cur.fetchall()
     if cur.rowcount == 0:
         return {
@@ -299,7 +299,7 @@ async def get_rating_apmovie(movie_name: str):
     cur.close()
     del cur
     db.close()
-    return avgRating;
+    return {"title": avgRating[0][0], "rate": avgRating[0][1]} 
 
 
 @app.post("/")
@@ -316,7 +316,7 @@ async def create_user(name: str):
         db.close()
     except HTTPException as e:
         log.debug(e)
-    return apiKeyUser
+    return {"apikey": apiKeyUser[0][0]}
 
 
 @app.delete("/")
