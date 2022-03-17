@@ -45,7 +45,7 @@ def get_movie_rating_imdb(movie_name: str):
         # get imdbRating from the response
         return {"original_title": data["Title"], "rating": float(data["imdbRating"]), "vote_count": int(data["imdbVotes"].replace(",", "")), "id": data["imdbID"]}
     else:
-        return {"Error": "Movie not found"}
+        raise HTTPException(status_code=404, detail="movie not found !")
 
 # get the rating of a movie from the movie database
 @app.get("/movie/tmdb/{movie_name}")
@@ -63,7 +63,7 @@ def get_movie_rating_tmdb(movie_name: str):
         # get the rating from the movie
         return {"original_title": movie["original_title"], "rating": movie["vote_average"], "vote_count": movie["vote_count"]}
     else:
-        return {"Error": "Movie not found"}
+        raise HTTPException(status_code=404, detail="movie not found !")
 
 # gets the rating of a movie from metacritic
 @app.get("/movie/metacritic/{movie_name}")
@@ -77,7 +77,7 @@ def get_movie_rating_metacritic(movie_name: str):
         # get imdbRating from the response
         return {"original_title": data["Title"], "rating": float(data["Metascore"])/10}
     else:
-        return {"Error": "Movie not found"}
+        raise HTTPException(status_code=404, detail="movie not found !")
 
 
 @app.get("/movie/rating/")
@@ -89,7 +89,7 @@ def get_movie_rating_api(movie_name: str):
     if "Error" in imdb :
         if "Error" in tmdb:
             if "Error" in metacritic:
-                return {"Error": "Movie not found"}
+                raise HTTPException(status_code=404, detail="movie not found !")
             else: 
                 return {"original_title": metacritic["original_title"], "rating": float(metacritic["rating"])}
         else:
@@ -206,24 +206,19 @@ async def post_comment(
 
     movie_name = parse_title(movie_name)
     if (rate > 10 or rate < 0):
-        return {"Error": "Rate must be between 0 and 10"}
+        raise HTTPException(status_code=400, detail="Rate must be between 0 and 10")
     try:
         db = connect_db()
         cur = db.cursor()
         cur.execute("SELECT id from users where apikey=%s", (apikey))
         idu = cur.fetchone()[0]
         if cur.rowcount == 0:
-            return {
-                "error": "wrong apikey !"
-            }
+            raise HTTPException(status_code=401, detail="wrong apikey !")
         else:
             # Authenticated
             idm = createMovieIfNotExist(movie_name)
             if (idm == ""):
-                return {
-                    "error": "movie not found"
-                }
-
+                raise HTTPException(status_code=404, detail="movie not found !")
             cur.execute(
                 "SELECT c.id from comments c, users u, movies m where c.idu=u.id AND m.id=c.idm AND apikey=%s AND m.title like %s", (apikey, movie_name))
 
@@ -276,9 +271,7 @@ async def get_comments(movie_name: str):
         "SELECT title, name, text, rating FROM comments c, movies m, users u WHERE c.idm = m.id and u.id=c.idu and m.title=%s", (movie_name))
     comments = cur.fetchall()
     if cur.rowcount == 0:
-        return {
-            "error": "wrong movie name !"
-        }
+        raise HTTPException(status_code=404, detail="movie not found !")
     cur.close()
     del cur
     db.close()
@@ -294,9 +287,7 @@ async def get_rating_apmovie(movie_name: str):
         "SELECT title, avg(rating) FROM comments c, movies m WHERE c.idm = m.id and m.title=%s", (movie_name))
     avgRating = cur.fetchall()
     if cur.rowcount == 0:
-        return {
-            "error": "wrong movie name !"
-        }
+        raise HTTPException(status_code=404, detail="movie not found !")
     cur.close()
     del cur
     db.close()
@@ -305,18 +296,22 @@ async def get_rating_apmovie(movie_name: str):
 
 @app.post("/")
 async def create_user(name: str):
+    db = connect_db()
+    cur = db.cursor()
+    cur.execute(
+        "SELECT id FROM users u WHERE u.name=%s", (name))
+    if cur.rowcount >= 1:
+        raise HTTPException(status_code=400, detail="username already exists !")
     try:
-        db = connect_db()
         cur = db.cursor()
         cur.execute("INSERT INTO users(name) VALUES (%s)", (name))
         db.commit()
 
         cur.execute("SELECT apikey from users where name=%s", (name))
         apiKeyUser = cur.fetchall()
-
-        db.close()
     except HTTPException as e:
         log.debug(e)
+    db.close()
     return {"apikey": apiKeyUser[0][0]}
 
 
@@ -341,16 +336,12 @@ async def delete_comment(apikey: str, movie_name: str):
         idu = cur.fetchall()
 
         if cur.rowcount == 0:
-            return {
-                "error": "wrong apikey !"
-            }
+            raise HTTPException(status_code=401, detail="wrong apikey !")
         else:
             cur.execute("SELECT id FROM movies WHERE title=%s", (movie_name))
             idm = cur.fetchone()[0]
             if cur.rowcount == 0:
-                return {
-                    "error": "wrong title !"
-                }
+                raise HTTPException(status_code=404, detail="movie not found !")
             else:
                 cur.execute("DELETE FROM comments WHERE idu=%s AND idm=%s", (idu, idm))
                 cur.close()
@@ -369,9 +360,7 @@ def get_mycomments(apikey: str):
     cur.execute("SELECT id from users where apikey=%s", (apikey))
     idu = cur.fetchall()
     if cur.rowcount == 0:
-        return {
-            "error": "wrong apikey !"
-        }
+        raise HTTPException(status_code=401, detail="wrong apikey !")
     else:
         cur.execute("SELECT u.name, m.title, c.rating, c.text FROM comments c, movies m, users u WHERE m.id=c.idm AND c.idu=u.id AND idu=%s", (idu))
         mycomments = cur.fetchall()
