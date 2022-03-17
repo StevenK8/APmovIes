@@ -118,7 +118,7 @@ def get_top_rating(page: int = 1, date_min: Optional[date] = None, date_max: Opt
     data = json.loads(request_response.read())
 
     filtered_data = []
-    print(date_min)
+    # print(date_min)
     
     # Filter data by date
     for movie in data["results"]:
@@ -258,7 +258,7 @@ def createMovieIfNotExist(title):
                 db.commit()
             except:
                 idm = ""
-            print(title)
+            # print(title)
         else:
             idm = cur.fetchone()[0]
             
@@ -357,10 +357,9 @@ async def delete_comment(apikey: str, movie_name: str):
                 del cur
                 db.commit()
                 db.close()
-                return mycomment
+                return 
     except HTTPException as e:
         log.debug(e)
-    return mycomment
 
 @app.get("/mycomments/")
 def get_mycomments(apikey: str):
