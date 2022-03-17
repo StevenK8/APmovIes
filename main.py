@@ -118,8 +118,8 @@ def parse_title_tmdb(title):
 @app.post("/movie/{movie_name}/comment")
 async def post_comment(
         apikey: str,
-        movie_name: str,
-        rate: float = Query(..., gt=0, lt=10),
+        movieName: str,
+        rate: float = Query(..., ge=0, le=10),
         comment: Optional[str] = Query(None, max_length=150)):
 
     movie_name = parse_title(movie_name)
