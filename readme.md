@@ -20,6 +20,8 @@ Si un utilisateur souhaite quitter définitivement l'API, il peut supprimer son 
 
 Tout est utilisable depuis l'interface swagger/fastapi.
 
+Nos tests se trouvent dans test.py
+
 Tout notre code est en python.
 
 Merci pour votre attention.

@@ -56,11 +56,6 @@ async def test_get_comments_movie():
 
 async def test_delete_user(apikey):
     await main.delete_user(apikey)
-    try:
-        comments = main.get_mycomments(apikey)
-        print("ok")
-    except HTTPException as e:
-        print("ok : ", e)
 
 apikey = asyncio.run(test_create_user())
 asyncio.run(test_movie_rating())
