@@ -339,7 +339,7 @@ async def delete_comment(apikey: str, movie_name: str):
             raise HTTPException(status_code=401, detail="wrong apikey !")
         else:
             cur.execute("SELECT id FROM movies WHERE title=%s", (movie_name))
-            idm = cur.fetchone()[0]
+            idm = cur.fetchall()
             if cur.rowcount == 0:
                 raise HTTPException(status_code=404, detail="movie not found !")
             else:
@@ -350,7 +350,7 @@ async def delete_comment(apikey: str, movie_name: str):
                 db.close()
                 return 
     except HTTPException as e:
-        log.debug(e)
+        return e
 
 @app.get("/mycomments/")
 def get_mycomments(apikey: str):
