@@ -201,6 +201,23 @@ async def get_comments(movie_name: str):
     db.close()
     return comments
 
+@app.get("/movie/{movie_name}/")
+async def get_rating_apmovie(movie_name: str):
+    movie_name = parse_title(movie_name)
+    db = connect_db()
+    cur = db.cursor()
+    cur.execute(
+        "SELECT avg(rating) FROM comments c, movies m WHERE c.idm = m.id and m.title=%s", (movie_name))
+    avgRating = cur.fetchall()
+    if cur.rowcount == 0:
+        return {
+            "error": "wrong movie name !"
+        }
+    cur.close()
+    del cur
+    db.close()
+    return avgRating;
+
 
 @app.post("/")
 async def create_user(name: str):
