@@ -1,4 +1,5 @@
 from cmath import log
+from datetime import date
 from urllib import request, response
 import json
 import pymysql
@@ -91,15 +92,58 @@ def get_movie_rating_api(movie_name: str):
 
 
 @app.get("/movie/top_rated")
-def get_top_rating(page: int = 1):
+def get_top_rating(page: int = 1, date_min: Optional[str] = None, date_max: Optional[str] = None):
     url = "https://api.themoviedb.org/3/movie/top_rated?api_key=" + \
         TMDB_API_KEY+"&language=en-US&region=fr&page=" + str(page)
     # Get json data from the url
     request_response = request.urlopen(url)
     data = json.loads(request_response.read())
 
-    return data
+    filtered_data = []
+    
+    # Filter data by date
+    for movie in data["results"]:
+        if(date_min is not None and date_max is not None):
+            if(later_than(movie["release_date"] , date_min) and not later_than(movie["release_date"] , date_max)):
+                # data["results"].remove(movie)
+                filtered_data.append(movie)
+        elif(date_min is not None):
+            if(later_than(movie["release_date"] , date_min)):
+                # data["results"].remove(movie)
+                filtered_data.append(movie)
+        elif(date_max is not None):
+            if(not later_than(movie["release_date"] , date_max)):
+                # data["results"].remove(movie)
+                filtered_data.append(movie)
+        else:
+            filtered_data.append(movie)
 
+    return filtered_data
+
+# Compares dates that are in the format YYYY-MM-DD
+def later_than(date1, date2):
+    date1 = date1.split("-")
+    date2 = date2.split("-")
+    if(len(date1)>=1 and len(date2)>=1):
+        if(int(date1[0]) > int(date2[0])):
+            return True
+        elif(int(date1[0]) < int(date2[0])):
+            return False
+        if (len(date1)>=2 and len(date2)>=2):
+            if(int(date1[1]) > int(date2[1])):
+                return True
+            elif(int(date1[1]) < int(date2[1])):
+                return False
+            if (len(date1)>=3 and len(date2)>=3):
+                if(int(date1[2]) > int(date2[2])):
+                    return True
+                elif(int(date1[2]) < int(date2[2])):
+                    return False
+                else:
+                    return False
+            else:
+                return False
+    return False
 
 def connect_db():
     return pymysql.connect(host=MYSQL_HOST, user=MYSQL_USER, passwd=MYSQL_PASSWORD, db=MYSQL_DB)
