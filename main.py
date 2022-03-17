@@ -27,7 +27,7 @@ app = FastAPI()
 
 @app.get("/")
 async def root():
-    return {"message": "Welcome to APmovIes ! An API that gives informations from multiple movie websites. Try /docs to access our documentation"}
+    return {"message": "Welcome to APmovIes ! An API that gives information from multiple movie websites. Try /docs to access our documentation"}
 
 
 # gets the rating of a movie from imdb
