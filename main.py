@@ -316,7 +316,7 @@ async def create_user(name: str):
         db.close()
     except HTTPException as e:
         log.debug(e)
-    return "Your apikey : ", apiKeyUser, " keep it confidential"
+    return apiKeyUser
 
 
 @app.delete("/")
