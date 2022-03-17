@@ -64,8 +64,6 @@ def get_movie_rating_tmdb(movie_name: str):
         return {"Error": "Movie not found"}
 
 # gets the rating of a movie from metacritic
-
-
 @app.get("/movie/metacritic/{movie_name}")
 def get_movie_rating_metacritic(movie_name: str):
     movie_name = parse_title(movie_name)
@@ -80,7 +78,7 @@ def get_movie_rating_metacritic(movie_name: str):
         return {"Error": "Movie not found"}
 
 
-@app.get("/movie/{movie_name}")
+@app.get("/movie/rating/")
 def get_movie_rating_api(movie_name: str):
     imdb = get_movie_rating_imdb(movie_name)
     tmdb = get_movie_rating_tmdb(movie_name)
@@ -93,9 +91,9 @@ def get_movie_rating_api(movie_name: str):
 
 
 @app.get("/movie/top_rated")
-def get_top_rating():
+def get_top_rating(page: int = 1):
     url = "https://api.themoviedb.org/3/movie/top_rated?api_key=" + \
-        TMDB_API_KEY+"&language=en-US&region=fr&page=1" 
+        TMDB_API_KEY+"&language=en-US&region=fr&page=" + str(page)
     # Get json data from the url
     request_response = request.urlopen(url)
     data = json.loads(request_response.read())
@@ -109,7 +107,8 @@ def connect_db():
 
 def parse_title(title):
     # Capitalize the first letter of each word
-    title = title.title()
+    # title = title.title()
+    title = ' '.join([w.title() if w.islower() else w for w in title.split()])
     # Replace spaces or underscores or dashes with '+'
     title = title.replace("+", "_")
     title = title.replace("-", "_")
@@ -117,7 +116,8 @@ def parse_title(title):
 
 
 def parse_title_tmdb(title):
-    title = title.title()
+    # title = title.title()
+    title = ' '.join([w.title() if w.islower() else w for w in title.split()])
     # Replace spaces or underscores or dashes with '+'
     title = title.replace("+", "")
     title = title.replace("-", "")
@@ -127,7 +127,7 @@ def parse_title_tmdb(title):
 @app.post("/movie/{movie_name}/comment")
 async def post_comment(
         apikey: str,
-        movieName: str,
+        movie_name: str,
         rate: float = Query(..., ge=0, le=10),
         comment: Optional[str] = Query(None, max_length=150)):
 
@@ -185,6 +185,7 @@ def createMovieIfNotExist(title):
                 db.commit()
             except:
                 idm = ""
+            print(title)
         else:
             idm = cur.fetchone()[0]
             
