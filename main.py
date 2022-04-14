@@ -1,15 +1,13 @@
 from cmath import log
 from datetime import date
 import datetime
-from urllib import request, response
+from urllib import request
 import json
 import pymysql
-import asyncio
 
 # from bs4 import BeautifulSoup
 # import requests
-from fastapi import FastAPI, Path, HTTPException, Query
-from pydantic import BaseModel, JsonError, UrlError, Field
+from fastapi import FastAPI, HTTPException, Query
 from typing import Optional
 
 
