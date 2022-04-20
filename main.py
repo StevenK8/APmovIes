@@ -4,8 +4,6 @@ from urllib import request
 import json
 import pymysql
 
-# from bs4 import BeautifulSoup
-# import requests
 from fastapi import FastAPI, HTTPException, Query
 from typing import Optional
 
@@ -186,7 +184,6 @@ def parse_title(title):
 
 
 def parse_title_tmdb(title):
-    # title = title.title()
     title = ' '.join([w.title() if w.islower() else w for w in title.split()])
     # Replace spaces or underscores or dashes with '+'
     title = title.replace("+", "")
