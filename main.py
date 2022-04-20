@@ -235,7 +235,7 @@ async def post_comment(
         del cur
         db.close()
     except HTTPException as e:
-        log.debug(e)
+        raise HTTPException(status_code=400, detail="Cannot post comment")
     return {"title": movie_name,"comment": comment, "rate": rate}
 
 
@@ -259,7 +259,7 @@ def createMovieIfNotExist(title):
             
         return idm
     except HTTPException as e:
-        log.debug(e)
+        raise HTTPException(status_code=400, detail="Cannot insert movie")
 
 
 @app.get("/movie/{movie_name}/comments")
@@ -310,7 +310,7 @@ async def create_user(name: str):
         cur.execute("SELECT apikey from users where name=%s", (name))
         apiKeyUser = cur.fetchall()
     except HTTPException as e:
-        log.debug(e)
+        raise HTTPException(status_code=400, detail="Cannot create user")
     db.close()
     return {"apikey": apiKeyUser[0][0]}
 
@@ -324,7 +324,7 @@ async def delete_user(apikey: str):
         user = db.commit()
         db.close()
     except HTTPException as e:
-        log.debug(e)
+        raise HTTPException(status_code=400, detail="Cannot delete user")
     return user
 
 @app.delete("/mycomment")
