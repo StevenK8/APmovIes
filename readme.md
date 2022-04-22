@@ -41,11 +41,16 @@ Steven et Damien
 un fichier config.ini est à placer dans le dosser config sous la forme:
 
 [mysql]
+
 host = xxxxxxxxx
+
 user = xxxxxxxxx
+
 password = xxxxxxxxxxxxxxx
+
 db = xxxxxxxxxx
 
 [tmdb]
+
 api_key = xxxxxxxxxxxxxxxxxxxxxxxx
 
