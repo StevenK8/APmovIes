@@ -1,15 +1,10 @@
-from cmath import log
 from datetime import date
 import datetime
-from urllib import request, response
+from urllib import request
 import json
 import pymysql
-import asyncio
 
-# from bs4 import BeautifulSoup
-# import requests
-from fastapi import FastAPI, Path, HTTPException, Query
-from pydantic import BaseModel, JsonError, UrlError, Field
+from fastapi import FastAPI, HTTPException, Query
 from typing import Optional
 
 
@@ -189,7 +184,6 @@ def parse_title(title):
 
 
 def parse_title_tmdb(title):
-    # title = title.title()
     title = ' '.join([w.title() if w.islower() else w for w in title.split()])
     # Replace spaces or underscores or dashes with '+'
     title = title.replace("+", "")
@@ -235,7 +229,7 @@ async def post_comment(
         del cur
         db.close()
     except HTTPException as e:
-        log.debug(e)
+        raise HTTPException(status_code=400, detail="Cannot post comment")
     return {"title": movie_name,"comment": comment, "rate": rate}
 
 
@@ -259,7 +253,7 @@ def createMovieIfNotExist(title):
             
         return idm
     except HTTPException as e:
-        log.debug(e)
+        raise HTTPException(status_code=400, detail="Cannot insert movie")
 
 
 @app.get("/movie/{movie_name}/comments")
@@ -310,7 +304,7 @@ async def create_user(name: str):
         cur.execute("SELECT apikey from users where name=%s", (name))
         apiKeyUser = cur.fetchall()
     except HTTPException as e:
-        log.debug(e)
+        raise HTTPException(status_code=400, detail="Cannot create user")
     db.close()
     return {"apikey": apiKeyUser[0][0]}
 
@@ -324,7 +318,7 @@ async def delete_user(apikey: str):
         user = db.commit()
         db.close()
     except HTTPException as e:
-        log.debug(e)
+        raise HTTPException(status_code=400, detail="Cannot delete user")
     return user
 
 @app.delete("/mycomment")
