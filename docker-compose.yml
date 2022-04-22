@@ -19,6 +19,139 @@ services:
         - "traefik.http.routers.fastapi-web.rule=Host(`fastapi.stevenkerautret.site`)"
         - "traefik.http.routers.fastapi-secured.rule=Host(`fastapi.stevenkerautret.site`)"
 
+
+  traefik:
+    image: traefik:latest
+    container_name: traefik
+    # Enables the web UI and tells Traefik to listen to docker
+    command:
+       ## API
+       #- --api.insecure=true
+       - --api.dashboard=true # <== Enabling the dashboard to view services, middlewares, routers, etc...
+       ## Providers
+       - --providers.docker=true # <== Enabling docker as the provider for traefik
+       - --providers.docker.exposedbydefault=false # <== Don't expose every container to traefik, only expose enabled ones
+       - --providers.file.filename=/dynamic.yaml # <== Referring to a dynamic configuration file
+       - --providers.docker.network=web # <== Operate on the docker network named web
+       ## Log Settings (options: ERROR, DEBUG, PANIC, FATAL, WARN, INFO) - https://docs.traefik.io/observability/logs/ ##
+       ## Entrypoints Settings - https://docs.traefik.io/routing/entrypoints/#configuration ##
+       - --entrypoints.web.address=:80 # <== Defining an entrypoint for port :80 named web
+       - --entrypoints.web-secured.address=:443 # <== Defining an entrypoint for https on port :443 named web-secured
+       ## Certificate Settings (Let's Encrypt) -  https://docs.traefik.io/https/acme/#configuration-examples ##
+       - --certificatesresolvers.mytlschallenge.acme.tlschallenge=true # <== Enable TLS-ALPN-01 to generate and renew ACME certs
+       - --certificatesresolvers.mytlschallenge.acme.email=xxxxxx # <== Setting email for certs
+       - --certificatesresolvers.mytlschallenge.acme.storage=/letsencrypt/acme.json # <== Defining acme file to store cert information
+    ports:
+      # The HTTP port
+      - "80:80"
+      # The Web UI (enabled by --api.insecure=true)
+      - "8080:8080"
+      - "443:443" # <== https
+    volumes:
+      - "./traefik/letsencrypt:/letsencrypt"
+      # So that Traefik can listen to the Docker events
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./traefik/dynamic.yaml:/dynamic.yaml # <== Volume for dynamic conf file
+    networks:
+      - web # <== Placing traefik on the network named web, to access containers on this network
+    labels:
+    #### Labels define the behavior and rules of the traefik proxy for this container ####
+      - "traefik.enable=true" # <== Enable traefik on itself to view dashboard and assign subdomain to view it
+      #- "traefik.http.routers.api.rule=Host(`monitor.stevenkerautret.site`)" # <== Setting the domain for the dashboard
+      #- "traefik.http.routers.api.service=api@internal" # <== Enabling the api to be a service to access
+      #- "traefik.http.routers.traefik-secured.tls.certresolver=mytlschallenge" # <== Defining certsresolvers for https
+      - traefik.http.routers.monitor.rule=Host(`monitor.stevenkerautret.site`)
+      - traefik.http.routers.monitor.tls=true
+      - traefik.http.routers.monitor.service=api@internal
+      - traefik.http.routers.monitor.tls.certresolver=mytlschallenge
+    restart : always
+
+
+  grafana:
+     image: grafana/grafana:latest
+     container_name: grafana
+     volumes:
+       - /docker/grafana/data:/var/lib/grafana
+     environment:
+       - GF_SECURITY_ADMIN_USER=xxxxxxxxxxxxxxxxx
+       - GF_SECURITY_ADMIN_PASSWORD=xxxxxxxxxxxxxxxxxxx
+       - GF_SERVER_ROOT_URL=https://grafana.stevenkerautret.site
+       - GF_USERS_ALLOW_SIGN_UP=false
+     restart: unless-stopped
+     labels:
+       - "traefik.enable=true"
+       - "traefik.http.routers.grafana-web.entrypoints=web"
+       - "traefik.http.routers.grafana-web.middlewares=redirect@file"
+       - "traefik.http.routers.grafana-secured.entrypoints=web-secured"
+       - "traefik.http.routers.grafana-secured.tls.certresolver=mytlschallenge"
+       - "traefik.http.routers.grafana-web.rule=Host(`grafana.stevenkerautret.site`)"
+       - "traefik.http.routers.grafana-secured.rule=Host(`grafana.stevenkerautret.site`)"
+     networks:
+       - web
+     depends_on:
+       - traefik
+
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: unless-stopped
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Paris
+    volumes:
+      - /docker/prometheus/config:/etc/prometheus/
+      - /docker/prometheus/data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    expose:
+      - 9090
+    networks:
+      - backend
+    ports:
+      - 9090:9090
+
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    restart: unless-stopped
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    expose:
+      - 9100
+    networks:
+      - backend
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisor
+    ports:
+      - '8083:8080'
+    command:
+      - '--housekeeping_interval=30s'
+      - '--docker_only=true'
+      - '--disable_metrics=percpu,sched,tcp,udp,disk,diskIO,accelerator,hugetlb,referenced_memory,cpu_topology,resctrl'
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    expose:
+      - 8083
+    networks:
+      - backend
+
+
 networks:
   web:
     external: true
