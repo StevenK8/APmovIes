@@ -33,3 +33,19 @@ Des métriques sont disponibles sur grafana. Les données proviennent de prometh
 Merci pour votre attention.
 
 Steven et Damien
+
+
+
+## Configuration
+
+un fichier config.ini est à placer dans le dosser config sous la forme:
+
+[mysql]
+host = xxxxxxxxx
+user = xxxxxxxxx
+password = xxxxxxxxxxxxxxx
+db = xxxxxxxxxx
+
+[tmdb]
+api_key = xxxxxxxxxxxxxxxxxxxxxxxx
+
