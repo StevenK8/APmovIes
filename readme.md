@@ -28,6 +28,8 @@ L'installation est déployée avec un conteneur docker qui est build automatique
 
 Le conteneur est accessible en ligne à travers Traefik (TLS Cloudflare), et une base de données mariadb est installée.
 
+Des métriques sont disponibles sur grafana. Les données proviennent de prometheus, qui est connecté à cadvisor d'une part pour les infos des conteneurs docker et à node-exporter pour les informations du système hôte.
+
 Merci pour votre attention.
 
 Steven et Damien
